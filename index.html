@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Infinitecoin Jumper | Play to Earn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: linear-gradient(135deg, #0a2a4a 0%, #1a5a8a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 24px;
+            cursor: pointer;
+            background: #5c9ed4;
+        }
+        #score {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px 18px;
+            border-radius: 40px;
+            color: #f5a623;
+            font-weight: bold;
+            font-size: 22px;
+            font-family: monospace;
+            z-index: 10;
+            pointer-events: none;
+            border: 1px solid #f5a62366;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            z-index: 20;
+        }
+        .ctrl-btn {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            border: 2px solid #f5a623;
+            color: #f5a623;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px 28px;
+            border-radius: 60px;
+            cursor: pointer;
+        }
+        .ctrl-btn:active {
+            background: #f5a623;
+            color: #000;
+            transform: scale(0.95);
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px 35px;
+            border-radius: 32px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+            min-width: 260px;
+            border: 1px solid #f5a623;
+        }
+        #gameOver h2 {
+            color: #f5a623;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        #gameOver p {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            background: #f5a623;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .game-footer {
+            position: absolute;
+            bottom: -28px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+        }
+        @media (max-width: 500px) {
+            .ctrl-btn { padding: 8px 20px; font-size: 20px; }
+            #score { font-size: 18px; top: 10px; left: 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div id="score">♾️ IFC: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="controls">
+        <button class="ctrl-btn" id="jumpBtn">▲ JUMP</button>
+    </div>
+    <div id="gameOver">
+        <h2>✨ GAME OVER ✨</h2>
+        <p>♾️ IFC: <span id="finalScore">0</span></p>
+        <button id="restartBtn">🔄 RESTART</button>
+    </div>
+    <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | DOUBLE JUMP</div>
+</div>
+<script>
+    (function(){
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 400, H = 600;
+        canvas.width = W;
+        canvas.height = H;
+
+        let gameRunning = true;
+        let score = 0;
+
+        let player = {
+            x: 80, y: 0, vy: 0,
+            width: 22, height: 26,
+            grounded: false, doubleJumpUsed: false
+        };
+
+        let groundSegments = [];
+        const GROUND_Y = H - 60;
+        const SEGMENT_WIDTH = 60;
+        const VISIBLE_LEFT = -50;
+        const VISIBLE_RIGHT = W + 50;
+
+        function buildGround() {
+            groundSegments = [];
+            let startX = 0;
+            while (startX < VISIBLE_RIGHT + 200) {
+                groundSegments.push({ x: startX, y: GROUND_Y, w: SEGMENT_WIDTH });
+                startX += SEGMENT_WIDTH;
+            }
+        }
+
+        let collectibles = [];
+
+        function spawnCollectible() {
+            let x = 60 + Math.random() * (W - 120);
+            let y = GROUND_Y - 25 - Math.random() * 40;
+            collectibles.push({
+                x: x, y: y, radius: 12,
+                value: 10, collected: false
+            });
+        }
+
+        function updateCollectibles() {
+            for (let i = 0; i < collectibles.length; i++) {
+                let c = collectibles[i];
+                if (!c.collected &&
+                    player.x < c.x + c.radius &&
+                    player.x + player.width > c.x - c.radius &&
+                    player.y < c.y + c.radius &&
+                    player.y + player.height > c.y - c.radius) {
+                    c.collected = true;
+                    score += c.value;
+                    document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+                }
+            }
+            collectibles = collectibles.filter(c => !c.collected);
+        }
+
+        function updatePlayer() {
+            player.vy += 0.65;
+            player.y += player.vy;
+
+            player.grounded = false;
+            for (let seg of groundSegments) {
+                if (player.x + player.width > seg.x && player.x < seg.x + seg.w) {
+                    let groundTop = seg.y;
+                    if (player.y + player.height > groundTop && player.y + player.height < groundTop + 15) {
+                        player.y = groundTop - player.height;
+                        player.vy = 0;
+                        player.grounded = true;
+                        player.doubleJumpUsed = false;
+                        break;
+                    }
+                }
+            }
+
+            if (player.x < 20) player.x = 20;
+            if (player.x + player.width > W - 20) player.x = W - 20 - player.width;
+            if (player.y > H + 50) gameOver();
+        }
+
+        function jump() {
+            if (!gameRunning) return;
+            if (player.grounded) {
+                player.vy = -9.2;
+                player.grounded = false;
+                player.doubleJumpUsed = false;
+            } else if (!player.doubleJumpUsed) {
+                player.vy = -8.5;
+                player.doubleJumpUsed = true;
+            }
+        }
+
+        function drawInfinity(x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(1, 0.7);
+            ctx.beginPath();
+            ctx.arc(-size*0.5, 0, size*0.45, 0, Math.PI*2);
+            ctx.arc(size*0.5, 0, size*0.45, 0, Math.PI*2);
+            ctx.fillStyle = '#f5a623';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-size*0.5, 0, size*0.25, 0, Math.PI*2);
+            ctx.arc(size*0.5, 0, size*0.25, 0, Math.PI*2);
+            ctx.fillStyle = '#0f2f3f';
+            ctx.fill();
+            ctx.restore();
+            ctx.font = `${size-2}px monospace`;
+            ctx.fillStyle = '#FFD966';
+            ctx.fillText('∞', x-6, y+6);
+        }
+
+        function drawPlayer() {
+            let x = player.x, y = player.y;
+            ctx.fillStyle = '#C22B2B';
+            ctx.fillRect(x+4, y-6, 14, 8);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(x+8, y-4, 6, 4);
+            ctx.fillStyle = '#FDD7A4';
+            ctx.fillRect(x+2, y, 18, 18);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x+6, y+4, 3, 4);
+            ctx.fillRect(x+13, y+4, 3, 4);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x+4, y+12, 14, 4);
+            ctx.fillStyle = '#E52525';
+            ctx.fillRect(x+2, y+16, 18, 12);
+            ctx.fillStyle = '#2C2C8C';
+            ctx.fillRect(x, y+24, 22, 8);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x+8, y+24, 6, 8);
+        }
+
+        function drawGround() {
+            for (let seg of groundSegments) {
+                ctx.fillStyle = '#4c8b3b';
+                ctx.fillRect(seg.x, seg.y, seg.w, 12);
+                ctx.fillStyle = '#6aa84f';
+                ctx.fillRect(seg.x, seg.y-4, seg.w, 5);
+                ctx.fillStyle = '#3c6e2f';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(seg.x+10+i*15, seg.y-6, 2, 6);
+                }
+            }
+        }
+
+        function drawCollectibles() {
+            for (let c of collectibles) {
+                drawInfinity(c.x, c.y, c.radius+2);
+                ctx.font = 'bold 10px monospace';
+                ctx.fillStyle = '#fff';
+                ctx.fillText('+10', c.x-10, c.y-10);
+            }
+        }
+
+        let clouds = [];
+        for (let i = 0; i < 5; i++) {
+            clouds.push({ x: Math.random()*W, y: 40+Math.random()*120, size: 35+Math.random()*30 });
+        }
+        function drawBackground() {
+            let grad = ctx.createLinearGradient(0,0,0,H);
+            grad.addColorStop(0, '#6ab0de');
+            grad.addColorStop(1, '#3d7ca3');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0,W,H);
+            ctx.fillStyle = 'rgba(255,255,245,0.9)';
+            for (let c of clouds) {
+                ctx.beginPath();
+                ctx.ellipse(c.x, c.y, c.size/2, c.size/3, 0, 0, Math.PI*2);
+                ctx.ellipse(c.x-c.size/3, c.y-c.size/5, c.size/3, c.size/4, 0, 0, Math.PI*2);
+                ctx.ellipse(c.x+c.size/3, c.y-c.size/5, c.size/3, c.size/4, 0, 0, Math.PI*2);
+                ctx.fill();
+                c.x += 0.2;
+                if (c.x > W+60) c.x = -60;
+            }
+        }
+
+        function gameOver() {
+            if (!gameRunning) return;
+            gameRunning = false;
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            document.getElementById('score').innerHTML = '♾️ IFC: 0';
+            player.y = GROUND_Y - player.height;
+            player.vy = 0;
+            player.grounded = true;
+            player.doubleJumpUsed = false;
+            player.x = 80;
+            collectibles = [];
+            for (let i = 0; i < 6; i++) setTimeout(() => spawnCollectible(), i*150);
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        setInterval(() => {
+            if (gameRunning && collectibles.length < 12) spawnCollectible();
+        }, 1300);
+        for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i*200);
+
+        document.getElementById('jumpBtn').addEventListener('click', (e) => { e.preventDefault(); jump(); });
+        document.getElementById('restartBtn').addEventListener('click', () => restartGame());
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+            if (e.code === 'KeyR' && !gameRunning) restartGame();
+        });
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
+        canvas.addEventListener('mousedown', (e) => { e.preventDefault(); jump(); });
+
+        function updateGame() {
+            if (gameRunning) {
+                updatePlayer();
+                updateCollectibles();
+                if (groundSegments.length > 0 && groundSegments[groundSegments.length-1].x < VISIBLE_RIGHT) {
+                    let lastX = groundSegments[groundSegments.length-1].x;
+                    groundSegments.push({ x: lastX + SEGMENT_WIDTH, y: GROUND_Y, w: SEGMENT_WIDTH });
+                }
+                groundSegments = groundSegments.filter(seg => seg.x + seg.w > VISIBLE_LEFT);
+            }
+        }
+
+        function draw() {
+            drawBackground();
+            drawGround();
+            drawCollectibles();
+            drawPlayer();
+            ctx.font = 'bold 12px monospace';
+            ctx.fillStyle = '#fff5cf';
+            ctx.fillText('∞ COLLECT INFINITE COINS ∞', W/2-100, 45);
+        }
+
+        function animate() {
+            updateGame();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        buildGround();
+        player.y = GROUND_Y - player.height;
+        player.grounded = true;
+        animate();
+
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    })();
+</script>
+</body>
+  </html>
