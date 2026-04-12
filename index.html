@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinitecoin Jumper - Night Edition</title>
+    <title>Infinitecoin Jumper - Cosmic Night</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;user-select:none}
         body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
         .game-container{position:relative;width:100%;max-width:480px}
-        canvas{display:block;width:100%;height:auto;border-radius:24px;background:#0a0a2a;cursor:pointer}
-        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.7);padding:8px 18px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:22px;z-index:10}
+        canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer}
+        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);padding:8px 18px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:22px;z-index:10;border:1px solid #3b82f6}
         #controls{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:20}
-        .ctrl-btn{background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-size:24px;font-weight:bold;padding:10px 28px;border-radius:60px;cursor:pointer}
+        .ctrl-btn{background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-size:24px;font-weight:bold;padding:10px 28px;border-radius:60px;cursor:pointer;backdrop-filter:blur(8px)}
         .ctrl-btn:active{background:#3b82f6;color:#000}
-        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
+        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
         #gameOver h2{color:#3b82f6;margin-bottom:15px}
         #gameOver p{color:white;font-size:22px;margin-bottom:20px}
         #restartBtn{background:#3b82f6;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
@@ -25,8 +25,8 @@
     <div id="score">♾️ IFC: 0</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div id="controls"><button class="ctrl-btn" id="jumpBtn">▲ JUMP</button></div>
-    <div id="gameOver"><h2>GAME OVER</h2><p>♾️ IFC: <span id="finalScore">0</span></p><button id="restartBtn">RESTART</button></div>
-    <div class="game-footer">♾️ INFINITE COIN | AVOID VIRUSES | DOUBLE JUMP</div>
+    <div id="gameOver"><h2>✦ GAME OVER ✦</h2><p>♾️ IFC: <span id="finalScore">0</span></p><button id="restartBtn">RESTART</button></div>
+    <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | AVOID VIRUSES | DOUBLE JUMP</div>
 </div>
 <script>
     (function(){
@@ -36,15 +36,17 @@
         canvas.width = W;
         canvas.height = H;
 
+        // Game state
         let gameRunning = true;
         let score = 0;
         let worldOffset = 0;
         let currentSpeed = 2.5;
         let frame = 0;
-        let armSwing = 0;
 
+        // Player
         let player = { x: 100, y: 0, vy: 0, width: 24, height: 32, grounded: false, doubleJumpUsed: false };
 
+        // Ground
         let groundSegments = [];
         const GROUND_Y = H - 60;
         const SEGMENT_WIDTH = 60;
@@ -56,6 +58,7 @@
             }
         }
 
+        // Collectibles and viruses
         let collectibles = [];
         let viruses = [];
 
@@ -71,13 +74,8 @@
             viruses.push({ x: x, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
         }
 
-        setInterval(() => {
-            if (gameRunning && collectibles.length < 6) spawnCollectible();
-        }, 1800);
-        setInterval(() => {
-            if (gameRunning && viruses.length < 3) spawnVirus();
-        }, 2500);
-
+        setInterval(() => { if (gameRunning && collectibles.length < 6) spawnCollectible(); }, 1800);
+        setInterval(() => { if (gameRunning && viruses.length < 3) spawnVirus(); }, 2500);
         for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i * 400);
         for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(), i * 1000);
 
@@ -149,31 +147,37 @@
             }
         }
 
-        function drawInfinity(x, y, size, value) {
+        // Draw glowing infinity symbol
+        function drawInfinity(x, y, size, value, isGlowing = true) {
             ctx.save();
             ctx.translate(x, y);
             ctx.scale(1, 0.7);
+            if (isGlowing) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#3b82f6';
+            }
             ctx.beginPath();
             ctx.arc(-size*0.5, 0, size*0.45, 0, Math.PI*2);
             ctx.arc(size*0.5, 0, size*0.45, 0, Math.PI*2);
             ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#3b82f6';
             ctx.fill();
             ctx.beginPath();
             ctx.arc(-size*0.5, 0, size*0.25, 0, Math.PI*2);
             ctx.arc(size*0.5, 0, size*0.25, 0, Math.PI*2);
-            ctx.fillStyle = '#0f2f3f';
+            ctx.fillStyle = '#0a0a2a';
             ctx.fill();
             ctx.restore();
-            ctx.font = `bold 12px monospace`;
-            ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#3b82f6';
-            ctx.fillText(`+${value}`, x-9, y-14);
-            ctx.shadowBlur = 0;
+            if (value) {
+                ctx.font = `bold 12px monospace`;
+                ctx.fillStyle = '#3b82f6';
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#3b82f6';
+                ctx.fillText(`+${value}`, x-9, y-14);
+                ctx.shadowBlur = 0;
+            }
         }
 
+        // Draw virus (angry, shaky)
         function drawVirus(x, y, shake) {
             ctx.save();
             ctx.translate(x + shake, y);
@@ -210,57 +214,68 @@
             ctx.restore();
         }
 
+        // Draw player with infinity head, chest symbol, and holding orbs
         function drawPlayer() {
             let x = player.x, y = player.y;
             let legOffset = Math.sin(Date.now() * 0.012) * 3;
             let armOffset = Math.sin(Date.now() * 0.015) * 4;
+            let orbRotate = Date.now() * 0.008;
+            let idleBounce = Math.sin(Date.now() * 0.008) * 1;
             
-            // Dark skin
-            ctx.fillStyle = '#8B5A2B';
-            
-            // Legs with walking animation
+            // Legs
             ctx.fillStyle = '#1a5a8a';
             ctx.fillRect(x+4, y+26, 6, 10 + legOffset);
             ctx.fillRect(x+14, y+26 - legOffset, 6, 10 + legOffset);
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(x+3, y+34, 7, 4);
-            ctx.fillRect(x+13, y+34, 7, 4);
+            
+            // Shoes
+            ctx.fillStyle = '#0a2a4a';
+            ctx.fillRect(x+2, y+34, 8, 5);
+            ctx.fillRect(x+13, y+34, 8, 5);
             
             // Body
-            ctx.fillStyle = '#3b82f6';
+            ctx.fillStyle = '#2a5a8a';
             ctx.fillRect(x+4, y+12, 16, 18);
             
-            // Arms swinging
-            ctx.fillStyle = '#3b82f6';
+            // Chest infinity symbol
+            drawInfinity(x+12, y+22, 8, null, true);
+            
+            // Arms holding orbs
+            ctx.fillStyle = '#2a5a8a';
             ctx.fillRect(x-2 + armOffset, y+16, 6, 6);
             ctx.fillRect(x+20 - armOffset, y+16, 6, 6);
-            ctx.fillStyle = '#8B5A2B';
-            ctx.fillRect(x-2 + armOffset, y+16, 4, 4);
-            ctx.fillRect(x+20 - armOffset, y+16, 4, 4);
             
-            // Head (dark skin)
-            ctx.fillStyle = '#8B5A2B';
-            ctx.fillRect(x+4, y, 16, 16);
-            
-            // Eyes
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x+7, y+4, 4, 4);
-            ctx.fillRect(x+13, y+4, 4, 4);
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(x+8, y+5, 2, 2);
-            ctx.fillRect(x+14, y+5, 2, 2);
-            
-            // Hat (sky blue)
+            // Orbs in hands (glowing infinite samples)
+            ctx.save();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(x-4 + armOffset + Math.sin(orbRotate) * 2, y+19, 6, 0, Math.PI*2);
             ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(x+2, y-4, 20, 6);
-            ctx.fillRect(x+6, y-8, 12, 6);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x+22 - armOffset + Math.cos(orbRotate) * 2, y+19, 6, 0, Math.PI*2);
+            ctx.fill();
+            drawInfinity(x-4 + armOffset + Math.sin(orbRotate) * 2, y+19, 5, null, true);
+            drawInfinity(x+22 - armOffset + Math.cos(orbRotate) * 2, y+19, 5, null, true);
+            ctx.restore();
             
-            // Idle bounce
-            let bounce = Math.sin(Date.now() * 0.008) * 1;
-            if (player.grounded) {
-                ctx.fillRect(x+4, y+26 + bounce, 6, 10);
-                ctx.fillRect(x+14, y+26 + bounce, 6, 10);
-            }
+            // Head (infinity symbol)
+            drawInfinity(x+12, y+6, 14, null, true);
+            
+            // Eye glow
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(x+8, y+4, 2, 0, Math.PI*2);
+            ctx.arc(x+16, y+4, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(x+8, y+4, 1, 0, Math.PI*2);
+            ctx.arc(x+16, y+4, 1, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
         }
 
         function drawGround() {
@@ -276,7 +291,7 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value);
+                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, true);
             }
         }
 
@@ -286,31 +301,39 @@
             }
         }
 
-        // Night sky with glowing infinite logos
+        // Cosmic background with stars and nebula
+        let stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
+        }
+        
         let bgInfinity = [];
-        for (let i = 0; i < 8; i++) {
-            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 150, size: 20 + Math.random() * 15, speed: 0.1 + Math.random() * 0.2 });
+        for (let i = 0; i < 10; i++) {
+            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 25 + Math.random() * 20, speed: 0.05 + Math.random() * 0.15 });
         }
 
         function drawBackground() {
-            let grad = ctx.createLinearGradient(0,0,0,H);
+            // Deep space gradient
+            let grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#0a0a2a');
+            grad.addColorStop(0.5, '#15153a');
             grad.addColorStop(1, '#1a1a3a');
             ctx.fillStyle = grad;
-            ctx.fillRect(0,0,W,H);
+            ctx.fillRect(0, 0, W, H);
             
             // Stars
-            ctx.fillStyle = '#ffffff';
-            for (let i = 0; i < 50; i++) {
-                if (i % 2 === 0) continue;
-                ctx.fillRect((i * 13) % W, (i * 7) % H, 1, 1);
+            for (let s of stars) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+                s.x -= 0.1;
+                if (s.x < 0) s.x = W;
             }
             
-            // Glowing infinite logos in background
+            // Glowing infinity logos in background
             for (let b of bgInfinity) {
                 ctx.save();
-                ctx.globalAlpha = 0.3;
-                ctx.shadowBlur = 12;
+                ctx.globalAlpha = 0.2;
+                ctx.shadowBlur = 10;
                 ctx.shadowColor = '#3b82f6';
                 ctx.translate(b.x, b.y);
                 ctx.scale(1, 0.7);
@@ -351,6 +374,7 @@
             document.getElementById('gameOver').style.display = 'none';
         }
 
+        // Controls
         document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); jump(); };
         document.getElementById('restartBtn').onclick = () => restartGame();
         window.onkeydown = (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } };
@@ -373,11 +397,11 @@
             drawCollectibles();
             drawViruses();
             drawPlayer();
-            ctx.font = 'bold 12px monospace';
+            ctx.font = 'bold 10px monospace';
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 5;
             ctx.shadowColor = '#3b82f6';
-            ctx.fillText('∞ COLLECT INFINITE COINS ∞', W/2-100, 35);
+            ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 30);
             ctx.shadowBlur = 0;
         }
 
