@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinitecoin Jumper</title>
+    <title>Infinitecoin Jumper - Night Edition</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;user-select:none}
-        body{background:#0a2a4a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
+        body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
         .game-container{position:relative;width:100%;max-width:480px}
-        canvas{display:block;width:100%;height:auto;border-radius:24px;background:#5c9ed4;cursor:pointer}
+        canvas{display:block;width:100%;height:auto;border-radius:24px;background:#0a0a2a;cursor:pointer}
         #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.7);padding:8px 18px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:22px;z-index:10}
         #controls{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:20}
         .ctrl-btn{background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-size:24px;font-weight:bold;padding:10px 28px;border-radius:60px;cursor:pointer}
@@ -17,7 +17,7 @@
         #gameOver h2{color:#3b82f6;margin-bottom:15px}
         #gameOver p{color:white;font-size:22px;margin-bottom:20px}
         #restartBtn{background:#3b82f6;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
-        .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:white}
+        .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:#3b82f6}
     </style>
 </head>
 <body>
@@ -40,6 +40,8 @@
         let score = 0;
         let worldOffset = 0;
         let currentSpeed = 2.5;
+        let frame = 0;
+        let armSwing = 0;
 
         let player = { x: 100, y: 0, vy: 0, width: 24, height: 32, grounded: false, doubleJumpUsed: false };
 
@@ -155,6 +157,8 @@
             ctx.arc(-size*0.5, 0, size*0.45, 0, Math.PI*2);
             ctx.arc(size*0.5, 0, size*0.45, 0, Math.PI*2);
             ctx.fillStyle = '#3b82f6';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#3b82f6';
             ctx.fill();
             ctx.beginPath();
             ctx.arc(-size*0.5, 0, size*0.25, 0, Math.PI*2);
@@ -163,9 +167,9 @@
             ctx.fill();
             ctx.restore();
             ctx.font = `bold 12px monospace`;
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 2;
-            ctx.shadowColor = 'black';
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#3b82f6';
             ctx.fillText(`+${value}`, x-9, y-14);
             ctx.shadowBlur = 0;
         }
@@ -208,42 +212,63 @@
 
         function drawPlayer() {
             let x = player.x, y = player.y;
-            // Legs
-            ctx.fillStyle = '#2C2C8C';
-            ctx.fillRect(x+4, y+26, 6, 10);
-            ctx.fillRect(x+14, y+26, 6, 10);
+            let legOffset = Math.sin(Date.now() * 0.012) * 3;
+            let armOffset = Math.sin(Date.now() * 0.015) * 4;
+            
+            // Dark skin
+            ctx.fillStyle = '#8B5A2B';
+            
+            // Legs with walking animation
+            ctx.fillStyle = '#1a5a8a';
+            ctx.fillRect(x+4, y+26, 6, 10 + legOffset);
+            ctx.fillRect(x+14, y+26 - legOffset, 6, 10 + legOffset);
             ctx.fillStyle = '#000000';
             ctx.fillRect(x+3, y+34, 7, 4);
             ctx.fillRect(x+13, y+34, 7, 4);
+            
             // Body
-            ctx.fillStyle = '#E52525';
+            ctx.fillStyle = '#3b82f6';
             ctx.fillRect(x+4, y+12, 16, 18);
-            // Arms
-            ctx.fillStyle = '#E52525';
-            ctx.fillRect(x-2, y+16, 6, 6);
-            ctx.fillRect(x+20, y+16, 6, 6);
-            ctx.fillStyle = '#FDD7A4';
-            ctx.fillRect(x-2, y+16, 4, 4);
-            ctx.fillRect(x+22, y+16, 4, 4);
-            // Head
-            ctx.fillStyle = '#FDD7A4';
+            
+            // Arms swinging
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(x-2 + armOffset, y+16, 6, 6);
+            ctx.fillRect(x+20 - armOffset, y+16, 6, 6);
+            ctx.fillStyle = '#8B5A2B';
+            ctx.fillRect(x-2 + armOffset, y+16, 4, 4);
+            ctx.fillRect(x+20 - armOffset, y+16, 4, 4);
+            
+            // Head (dark skin)
+            ctx.fillStyle = '#8B5A2B';
             ctx.fillRect(x+4, y, 16, 16);
+            
             // Eyes
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x+8, y+4, 3, 4);
-            ctx.fillRect(x+13, y+4, 3, 4);
-            // Hat
-            ctx.fillStyle = '#C22B2B';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x+7, y+4, 4, 4);
+            ctx.fillRect(x+13, y+4, 4, 4);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x+8, y+5, 2, 2);
+            ctx.fillRect(x+14, y+5, 2, 2);
+            
+            // Hat (sky blue)
+            ctx.fillStyle = '#3b82f6';
             ctx.fillRect(x+2, y-4, 20, 6);
             ctx.fillRect(x+6, y-8, 12, 6);
+            
+            // Idle bounce
+            let bounce = Math.sin(Date.now() * 0.008) * 1;
+            if (player.grounded) {
+                ctx.fillRect(x+4, y+26 + bounce, 6, 10);
+                ctx.fillRect(x+14, y+26 + bounce, 6, 10);
+            }
         }
 
         function drawGround() {
             for (let seg of groundSegments) {
                 let drawX = seg.x - worldOffset;
-                ctx.fillStyle = '#4c8b3b';
+                ctx.fillStyle = '#1a2a3a';
                 ctx.fillRect(drawX, seg.y, seg.w, 12);
-                ctx.fillStyle = '#6aa84f';
+                ctx.fillStyle = '#2a3a4a';
                 ctx.fillRect(drawX, seg.y-4, seg.w, 5);
             }
         }
@@ -261,22 +286,42 @@
             }
         }
 
-        let clouds = [];
-        for (let i = 0; i < 5; i++) clouds.push({ x: Math.random()*W, y: 40+Math.random()*120, size: 35+Math.random()*30 });
+        // Night sky with glowing infinite logos
+        let bgInfinity = [];
+        for (let i = 0; i < 8; i++) {
+            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 150, size: 20 + Math.random() * 15, speed: 0.1 + Math.random() * 0.2 });
+        }
 
         function drawBackground() {
             let grad = ctx.createLinearGradient(0,0,0,H);
-            grad.addColorStop(0, '#6ab0de');
-            grad.addColorStop(1, '#3d7ca3');
+            grad.addColorStop(0, '#0a0a2a');
+            grad.addColorStop(1, '#1a1a3a');
             ctx.fillStyle = grad;
             ctx.fillRect(0,0,W,H);
-            ctx.fillStyle = 'rgba(255,255,245,0.85)';
-            for (let c of clouds) {
+            
+            // Stars
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 50; i++) {
+                if (i % 2 === 0) continue;
+                ctx.fillRect((i * 13) % W, (i * 7) % H, 1, 1);
+            }
+            
+            // Glowing infinite logos in background
+            for (let b of bgInfinity) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = '#3b82f6';
+                ctx.translate(b.x, b.y);
+                ctx.scale(1, 0.7);
                 ctx.beginPath();
-                ctx.ellipse(c.x, c.y, c.size/2, c.size/3, 0, 0, Math.PI*2);
+                ctx.arc(-b.size*0.5, 0, b.size*0.4, 0, Math.PI*2);
+                ctx.arc(b.size*0.5, 0, b.size*0.4, 0, Math.PI*2);
+                ctx.fillStyle = '#3b82f6';
                 ctx.fill();
-                c.x -= 0.3;
-                if (c.x + c.size < 0) c.x = W + c.size;
+                ctx.restore();
+                b.x -= b.speed;
+                if (b.x + b.size < 0) b.x = W + b.size;
             }
         }
 
@@ -319,6 +364,7 @@
                 updateCollectibles();
                 updateViruses();
             }
+            frame++;
         }
 
         function draw() {
@@ -328,8 +374,11 @@
             drawViruses();
             drawPlayer();
             ctx.font = 'bold 12px monospace';
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#3b82f6';
             ctx.fillText('∞ COLLECT INFINITE COINS ∞', W/2-100, 35);
+            ctx.shadowBlur = 0;
         }
 
         function animate() { updateGame(); draw(); requestAnimationFrame(animate); }
