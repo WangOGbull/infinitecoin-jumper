@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinitecoin Jumper - Infinite Difficulty</title>
+    <title>Infinitecoin Jumper - Final</title>
     <style>
         * {
             margin: 0;
@@ -36,25 +36,50 @@
             position: absolute;
             top: 15px;
             left: 15px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
-            padding: 8px 18px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 6px 14px;
             border-radius: 40px;
             color: #3b82f6;
             font-weight: bold;
-            font-size: 22px;
+            font-size: 18px;
             z-index: 10;
             border: 1px solid #3b82f6;
             display: none;
         }
-        #controls {
+        #healthBarContainer {
             position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            z-index: 20;
+            top: 15px;
+            right: 15px;
+            width: 100px;
+            height: 12px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 20px;
+            z-index: 10;
+            display: none;
+            overflow: hidden;
+            border: 1px solid #3b82f6;
+        }
+        #healthBar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            transition: width 0.2s ease;
+        }
+        #pauseBtn {
+            position: absolute;
+            top: 15px;
+            right: 130px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 14px;
+            z-index: 10;
+            border: 1px solid #3b82f6;
+            cursor: pointer;
             display: none;
         }
         .ctrl-btn {
@@ -114,13 +139,35 @@
             color: #3b82f6;
             display: none;
         }
+        #pauseOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 25;
+            border-radius: 24px;
+        }
+        #pauseOverlay span {
+            color: #3b82f6;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
 <div class="game-container">
     <div id="score">♾️ IFC: 0</div>
+    <div id="healthBarContainer"><div id="healthBar"></div></div>
+    <div id="pauseBtn">⏸️ PAUSE</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div id="controls"><button class="ctrl-btn" id="jumpBtn">▲ JUMP</button></div>
+    <div id="pauseOverlay"><span>⏸️ PAUSED</span></div>
     <div id="gameOver"><h2>✦ GAME OVER ✦</h2><p>♾️ IFC: <span id="finalScore">0</span></p><button id="restartBtn">RESTART</button></div>
     <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | AVOID VIRUSES | DOUBLE JUMP</div>
 </div>
@@ -133,14 +180,16 @@
         canvas.height = H;
 
         // Game state
-        let gameState = "menu"; // menu, playing, gameOver
+        let gameState = "menu";
         let gameRunning = false;
+        let paused = false;
         let score = 0;
+        let health = 100;
         let worldOffset = 0;
         let currentSpeed = 2.5;
         let frame = 0;
         let hitBlinkCounter = 0;
-        let difficultyTier = 0; // 0 = normal, 1 = hard (after 1000 IFC)
+        let difficultyTier = 0;
 
         // Player
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false };
@@ -157,15 +206,13 @@
             }
         }
 
-        // Collectibles and viruses
         let collectibles = [];
         let viruses = [];
 
         function getCoinValue() {
-            if (difficultyTier >= 1) {
-                return Math.floor(Math.random() * 21) + 10; // 10-30 IFC
-            }
-            return Math.floor(Math.random() * 16) + 5; // 5-20 IFC
+            if (difficultyTier >= 2) return Math.floor(Math.random() * 31) + 20;
+            if (difficultyTier >= 1) return Math.floor(Math.random() * 21) + 10;
+            return Math.floor(Math.random() * 16) + 5;
         }
 
         function spawnCollectible() {
@@ -176,23 +223,33 @@
         }
 
         function spawnVirus() {
-            let x = 300 + Math.random() * 250;
-            viruses.push({ x: x, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+            viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
         }
 
-        function spawnDoubleVirus() {
-            let x1 = 300 + Math.random() * 200;
-            let x2 = x1 + 40 + Math.random() * 60;
-            viruses.push({ x: x1, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
-            viruses.push({ x: x2, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+        function spawnClusteredViruses(count) {
+            let baseX = 350 + Math.random() * 150;
+            let spacing = 28;
+            for (let i = 0; i < count; i++) {
+                viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+            }
         }
 
         let spawnInterval, virusInterval;
 
+        function updateUI() {
+            document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+            let healthPercent = Math.max(0, health);
+            document.getElementById('healthBar').style.width = `${healthPercent}%`;
+            let hue = (healthPercent / 100) * 120;
+            document.getElementById('healthBar').style.background = `hsl(${hue}, 100%, 50%)`;
+        }
+
         function startGame() {
             gameState = "playing";
             gameRunning = true;
+            paused = false;
             score = 0;
+            health = 100;
             currentSpeed = 2.5;
             worldOffset = 0;
             hitBlinkCounter = 0;
@@ -207,26 +264,27 @@
             player.x = 100;
             
             document.getElementById('score').style.display = 'block';
+            document.getElementById('healthBarContainer').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'block';
             document.getElementById('controls').style.display = 'flex';
             document.getElementById('gameOver').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'block';
-            document.getElementById('score').innerHTML = '♾️ IFC: 0';
+            document.getElementById('pauseOverlay').style.display = 'none';
+            updateUI();
             
             for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i * 300);
             for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(), i * 800);
             
             if (spawnInterval) clearInterval(spawnInterval);
             if (virusInterval) clearInterval(virusInterval);
-            spawnInterval = setInterval(() => { if (gameRunning && collectibles.length < 6) spawnCollectible(); }, 1800);
+            spawnInterval = setInterval(() => { if (gameRunning && !paused && collectibles.length < 6) spawnCollectible(); }, 1800);
             virusInterval = setInterval(() => { 
-                if (gameRunning && viruses.length < 3) {
-                    if (difficultyTier >= 1) {
-                        spawnDoubleVirus();
-                    } else {
-                        spawnVirus();
-                    }
+                if (gameRunning && !paused && viruses.length < 4) {
+                    if (difficultyTier >= 2) spawnClusteredViruses(3);
+                    else if (difficultyTier >= 1) spawnClusteredViruses(2);
+                    else spawnVirus();
                 }
-            }, 2500);
+            }, 2600);
         }
 
         function updateCollectibles() {
@@ -236,21 +294,26 @@
                 if (!c.collected && player.x < c.x + c.radius && player.x + player.width > c.x - c.radius && player.y < c.y + c.radius && player.y + player.height > c.y - c.radius) {
                     c.collected = true;
                     score += c.value;
-                    document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+                    updateUI();
                     
-                    // Check for difficulty increase at 1000 IFC
                     if (score >= 1000 && difficultyTier === 0) {
                         difficultyTier = 1;
-                        currentSpeed = 4.0; // Increase speed
+                        currentSpeed = 3.8;
+                    }
+                    if (score >= 1600 && difficultyTier === 1) {
+                        difficultyTier = 2;
+                        currentSpeed = 5.0;
                     }
                     
-                    // Progressive speed based on score
-                    if (difficultyTier === 1) {
-                        currentSpeed = 4.0 + Math.floor((score - 1000) / 500) * 0.3;
-                        if (currentSpeed > 6.5) currentSpeed = 6.5;
+                    if (difficultyTier === 2) {
+                        currentSpeed = 5.0 + Math.floor((score - 1600) / 400) * 0.3;
+                        if (currentSpeed > 6.8) currentSpeed = 6.8;
+                    } else if (difficultyTier === 1) {
+                        currentSpeed = 3.8 + Math.floor((score - 1000) / 300) * 0.2;
+                        if (currentSpeed > 4.8) currentSpeed = 4.8;
                     } else {
                         currentSpeed = 2.5 + Math.floor(score / 50) * 0.3;
-                        if (currentSpeed > 5.5) currentSpeed = 5.5;
+                        if (currentSpeed > 3.5) currentSpeed = 3.5;
                     }
                 }
                 if (c.x + c.radius < 0 || c.collected) { collectibles.splice(i, 1); i--; }
@@ -264,9 +327,10 @@
                 v.shake = Math.sin(Date.now() * 0.015 + i) * 2;
                 if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
                     v.active = true;
-                    score = Math.max(0, score - 10);
-                    document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+                    health = Math.max(0, health - 10);
+                    updateUI();
                     hitBlinkCounter = 14;
+                    if (health <= 0) gameOver();
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
@@ -288,12 +352,11 @@
             }
             if (player.x < 30) player.x = 30;
             if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
-            if (player.y > H + 50) gameOver();
             if (hitBlinkCounter > 0) hitBlinkCounter--;
         }
 
         function jump() {
-            if (!gameRunning) return;
+            if (!gameRunning || paused) return;
             if (player.grounded) { 
                 player.vy = -9.5; 
                 player.grounded = false; 
@@ -301,6 +364,12 @@
                 player.vy = -9.0; 
                 player.doubleJumpUsed = true; 
             }
+        }
+
+        function togglePause() {
+            if (gameState !== "playing") return;
+            paused = !paused;
+            document.getElementById('pauseOverlay').style.display = paused ? 'flex' : 'none';
         }
 
         function updateWorld() {
@@ -487,8 +556,8 @@
         }
         
         let bgInfinity = [];
-        for (let i = 0; i < 10; i++) {
-            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 25 + Math.random() * 20, speed: 0.05 + Math.random() * 0.15 });
+        for (let i = 0; i < 6; i++) {
+            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
         }
 
         function drawBackground() {
@@ -506,17 +575,18 @@
                 if (s.x < 0) s.x = W;
             }
             
+            // BIG SKY BLUE GLOWING INFINITY SYMBOL IN THE SKY
             ctx.save();
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = '#a855f7';
-            ctx.globalAlpha = 0.8;
-            drawInfinity(W/2, H/3, 55, null, true, '#a855f7', '#a855f7');
+            ctx.shadowBlur = 35;
+            ctx.shadowColor = '#3b82f6';
+            ctx.globalAlpha = 0.85;
+            drawInfinity(W/2, H/3.2, 65, null, true, '#3b82f6', '#3b82f6');
             ctx.restore();
             
             for (let b of bgInfinity) {
                 ctx.save();
-                ctx.globalAlpha = 0.2;
-                ctx.shadowBlur = 10;
+                ctx.globalAlpha = 0.15;
+                ctx.shadowBlur = 8;
                 ctx.shadowColor = '#3b82f6';
                 drawInfinity(b.x, b.y, b.size, null, true, '#3b82f6', '#3b82f6');
                 ctx.restore();
@@ -532,8 +602,11 @@
             document.getElementById('finalScore').innerText = score;
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('score').style.display = 'none';
+            document.getElementById('healthBarContainer').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
             document.getElementById('controls').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'none';
+            document.getElementById('pauseOverlay').style.display = 'none';
         }
 
         function restartGame() {
@@ -543,27 +616,34 @@
         function drawMenu() {
             drawBackground();
             
-            ctx.font = 'bold 26px monospace';
+            ctx.font = 'bold 28px monospace';
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#3b82f6';
-            ctx.fillText('INFINITE JUMPER', W/2-120, H/3);
+            ctx.fillText('INFINITE JUMPER', W/2-120, H/3 - 20);
             
-            drawInfinity(W/2, H/3 + 50, 35, null, true, '#a855f7', '#a855f7');
-            
-            ctx.font = '12px monospace';
+            ctx.font = '14px monospace';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('TAP or SPACE / UP to JUMP', W/2-100, H/2 + 30);
-            ctx.fillText('DOUBLE JUMP in AIR', W/2-80, H/2 + 55);
-            ctx.fillText('REACH 1000 IFC for HARD MODE', W/2-110, H/2 + 80);
-            ctx.fillText('2 VIRUSES + HIGHER REWARDS', W/2-105, H/2 + 95);
+            ctx.fillText('Welcome to Infinite Jumper!', W/2-105, H/3 + 30);
+            ctx.fillText('Jump to catch and earn real', W/2-110, H/3 + 55);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText('INFINITECOIN {IFC}', W/2-85, H/3 + 75);
+            ctx.fillStyle = '#ff6666';
+            ctx.fillText('Watch out for the JEETS VIRUSES!', W/2-115, H/3 + 100);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px monospace';
+            ctx.fillText('TAP or SPACE / UP to JUMP', W/2-100, H/2 + 40);
+            ctx.fillText('DOUBLE JUMP in AIR', W/2-80, H/2 + 60);
+            ctx.fillText('REACH 1000 IFC → 2 VIRUSES + HIGHER REWARDS', W/2-145, H/2 + 85);
+            ctx.fillText('REACH 1600 IFC → 3 VIRUSES + EVEN HIGHER REWARDS', W/2-160, H/2 + 105);
             
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 8;
-            ctx.fillRect(W/2-60, H/2 + 120, 120, 40);
+            ctx.fillRect(W/2-60, H/2 + 130, 120, 42);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 16px monospace';
-            ctx.fillText('START', W/2-25, H/2 + 148);
+            ctx.font = 'bold 18px monospace';
+            ctx.fillText('START', W/2-25, H/2 + 158);
             ctx.shadowBlur = 0;
             
             canvas.onclick = (e) => {
@@ -573,7 +653,7 @@
                 const scaleY = canvas.height / rect.height;
                 let mouseX = (e.clientX - rect.left) * scaleX;
                 let mouseY = (e.clientY - rect.top) * scaleY;
-                if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+120 && mouseY < H/2+160) {
+                if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+130 && mouseY < H/2+172) {
                     startGame();
                     canvas.onclick = null;
                 }
@@ -581,7 +661,7 @@
         }
 
         function updateGame() {
-            if (gameState === "playing" && gameRunning) {
+            if (gameState === "playing" && gameRunning && !paused) {
                 updateWorld();
                 updatePlayer();
                 updateCollectibles();
@@ -604,10 +684,13 @@
                     ctx.fillStyle = '#3b82f6';
                     ctx.shadowBlur = 5;
                     ctx.shadowColor = '#3b82f6';
-                    ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 30);
-                    if (difficultyTier >= 1) {
+                    ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32);
+                    if (difficultyTier >= 2) {
                         ctx.fillStyle = '#ff4444';
-                        ctx.fillText('⚡ HARD MODE ⚡', W/2-55, 55);
+                        ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55);
+                    } else if (difficultyTier >= 1) {
+                        ctx.fillStyle = '#ffaa44';
+                        ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55);
                     }
                     ctx.shadowBlur = 0;
                 }
@@ -619,21 +702,23 @@
         initGround();
         animate();
 
-        document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing") jump(); };
+        document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
         document.getElementById('restartBtn').onclick = () => { restartGame(); };
+        document.getElementById('pauseBtn').onclick = () => { togglePause(); };
         window.onkeydown = (e) => { 
             if (e.code === 'Space' || e.code === 'ArrowUp') { 
                 e.preventDefault(); 
-                if (gameState === "playing") jump(); 
-            } 
+                if (gameState === "playing" && !paused) jump(); 
+            }
+            if (e.code === 'KeyP' && gameState === "playing") { togglePause(); }
         };
         canvas.ontouchstart = (e) => { 
             e.preventDefault(); 
-            if (gameState === "playing") jump(); 
+            if (gameState === "playing" && !paused) jump(); 
         };
         canvas.onmousedown = (e) => { 
             e.preventDefault(); 
-            if (gameState === "playing") jump(); 
+            if (gameState === "playing" && !paused) jump(); 
         };
     })();
 </script>
