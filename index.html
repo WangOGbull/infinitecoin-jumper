@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinitecoin Jumper - Infinite Being</title>
+    <title>Infinitecoin Jumper - Anime Infinite Being</title>
     <style>
         * {
             margin: 0;
@@ -135,10 +135,10 @@
         let worldOffset = 0;
         let currentSpeed = 2.5;
         let frame = 0;
-        let hitFlash = 0; // For character blink on hit
+        let hitBlinkCounter = 0; // For rapid blink on hit
 
         // Player
-        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false };
+        let player = { x: 100, y: 0, vy: 0, width: 30, height: 38, grounded: false, doubleJumpUsed: false };
 
         // Ground
         let groundSegments = [];
@@ -160,7 +160,7 @@
             let x = 250 + Math.random() * 200;
             let y = GROUND_Y - 40 - Math.random() * 50;
             let value = Math.floor(Math.random() * 16) + 5;
-            collectibles.push({ x: x, y: y, radius: 11, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
+            collectibles.push({ x: x, y: y, radius: 12, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
         }
 
         function spawnVirus() {
@@ -197,7 +197,7 @@
                     v.active = true;
                     score = Math.max(0, score - 10);
                     document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
-                    hitFlash = 15; // Trigger blink effect on hit
+                    hitBlinkCounter = 14; // Rapid blink (7 full blinks)
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
@@ -220,7 +220,7 @@
             if (player.x < 30) player.x = 30;
             if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
             if (player.y > H + 50) gameOver();
-            if (hitFlash > 0) hitFlash--;
+            if (hitBlinkCounter > 0) hitBlinkCounter--;
         }
 
         function jump() {
@@ -243,32 +243,37 @@
             }
         }
 
-        // Draw glowing infinity symbol
+        // Draw correct infinity symbol (♾️) - two crossing loops
         function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            ctx.scale(1, 0.7);
             if (isGlowing) {
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = shadowColor;
             }
+            // Draw the two intersecting loops correctly
             ctx.beginPath();
-            ctx.arc(-size*0.5, 0, size*0.45, 0, Math.PI*2);
-            ctx.arc(size*0.5, 0, size*0.45, 0, Math.PI*2);
+            // Left loop
+            ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
+            // Right loop
+            ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = color;
             ctx.fill();
+            // Inner cutout to make it look like a true infinity symbol
+            ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
-            ctx.arc(-size*0.5, 0, size*0.25, 0, Math.PI*2);
-            ctx.arc(size*0.5, 0, size*0.25, 0, Math.PI*2);
-            ctx.fillStyle = '#0a0a2a';
+            ctx.ellipse(-size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
+            ctx.ellipse(size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
             ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
             ctx.restore();
+            
             if (value) {
-                ctx.font = `bold 12px monospace`;
+                ctx.font = `bold ${size}px monospace`;
                 ctx.fillStyle = color;
                 ctx.shadowBlur = 5;
                 ctx.shadowColor = shadowColor;
-                ctx.fillText(`+${value}`, x-9, y-14);
+                ctx.fillText(`+${value}`, x-12, y-18);
                 ctx.shadowBlur = 0;
             }
         }
@@ -310,73 +315,99 @@
             ctx.restore();
         }
 
-        // Draw player with infinity head, chest symbol, and holding orbs
+        // Draw anime-style infinite being with 3D shading and depth
         function drawPlayer() {
             let x = player.x, y = player.y;
             let legOffset = Math.sin(Date.now() * 0.012) * 4;
-            let armOffset = Math.sin(Date.now() * 0.015) * 5;
+            let armOffset = Math.sin(Date.now() * 0.015) * 6;
             let orbRotate = Date.now() * 0.008;
-            let blink = hitFlash > 0;
+            let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
             
             ctx.save();
             if (blink) {
-                ctx.globalAlpha = 0.5;
+                ctx.globalAlpha = 0.3;
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = '#ffffff';
             }
             
-            // Legs
-            ctx.fillStyle = '#1a5a8a';
-            ctx.fillRect(x+5, y+28, 6, 12 + legOffset);
-            ctx.fillRect(x+15, y+28 - legOffset, 6, 12 + legOffset);
+            // Shadow under character for 3D effect
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x+15, y+42, 12, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Legs with 3D shading
+            let gradLeg = ctx.createLinearGradient(x+5, y+28, x+11, y+38);
+            gradLeg.addColorStop(0, '#1a5a8a');
+            gradLeg.addColorStop(1, '#0f3a5a');
+            ctx.fillStyle = gradLeg;
+            ctx.fillRect(x+5, y+28, 7, 14 + legOffset);
+            ctx.fillRect(x+18, y+28 - legOffset, 7, 14 + legOffset);
             
             // Shoes
             ctx.fillStyle = '#0a2a4a';
-            ctx.fillRect(x+3, y+38, 8, 6);
-            ctx.fillRect(x+15, y+38, 8, 6);
+            ctx.fillRect(x+3, y+40, 9, 6);
+            ctx.fillRect(x+18, y+40, 9, 6);
             
-            // Body
-            ctx.fillStyle = '#2a5a8a';
-            ctx.fillRect(x+5, y+12, 18, 22);
+            // Body with 3D gradient
+            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
+            gradBody.addColorStop(0, '#3b82f6');
+            gradBody.addColorStop(1, '#1a4a8a');
+            ctx.fillStyle = gradBody;
+            ctx.fillRect(x+5, y+12, 20, 24);
             
             // Chest infinity symbol
-            drawInfinity(x+14, y+24, 9, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x+15, y+25, 10, null, true, '#3b82f6', '#3b82f6');
             
-            // Arms holding orbs
-            ctx.fillStyle = '#2a5a8a';
-            ctx.fillRect(x-3 + armOffset, y+18, 7, 8);
-            ctx.fillRect(x+24 - armOffset, y+18, 7, 8);
+            // Arms with 3D shading
+            let gradArm = ctx.createLinearGradient(x-3, y+18, x+3, y+26);
+            gradArm.addColorStop(0, '#3b82f6');
+            gradArm.addColorStop(1, '#1a4a8a');
+            ctx.fillStyle = gradArm;
+            ctx.fillRect(x-4 + armOffset, y+18, 8, 10);
+            ctx.fillRect(x+26 - armOffset, y+18, 8, 10);
             
             // Orbs in hands (glowing infinite samples)
             ctx.save();
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#3b82f6';
             ctx.beginPath();
-            ctx.arc(x-6 + armOffset + Math.sin(orbRotate) * 3, y+22, 7, 0, Math.PI*2);
+            ctx.arc(x-7 + armOffset + Math.sin(orbRotate) * 3, y+23, 8, 0, Math.PI*2);
             ctx.fillStyle = '#3b82f6';
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(x+28 - armOffset + Math.cos(orbRotate) * 3, y+22, 7, 0, Math.PI*2);
+            ctx.arc(x+32 - armOffset + Math.cos(orbRotate) * 3, y+23, 8, 0, Math.PI*2);
             ctx.fill();
-            drawInfinity(x-6 + armOffset + Math.sin(orbRotate) * 3, y+22, 6, null, true, '#3b82f6', '#3b82f6');
-            drawInfinity(x+28 - armOffset + Math.cos(orbRotate) * 3, y+22, 6, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x-7 + armOffset + Math.sin(orbRotate) * 3, y+23, 7, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x+32 - armOffset + Math.cos(orbRotate) * 3, y+23, 7, null, true, '#3b82f6', '#3b82f6');
             ctx.restore();
             
-            // Head (big infinity symbol)
-            drawInfinity(x+14, y+6, 16, null, true, '#3b82f6', '#3b82f6');
+            // Head (large infinity symbol with anime eyes)
+            drawInfinity(x+15, y+6, 18, null, true, '#3b82f6', '#3b82f6');
             
-            // Eye glow
+            // Anime-style large glowing eyes
             ctx.fillStyle = '#ffffff';
             ctx.shadowBlur = 10;
             ctx.shadowColor = '#3b82f6';
             ctx.beginPath();
-            ctx.arc(x+8, y+4, 2.5, 0, Math.PI*2);
-            ctx.arc(x+20, y+4, 2.5, 0, Math.PI*2);
+            ctx.ellipse(x+8, y+2, 4, 5, 0, 0, Math.PI*2);
+            ctx.ellipse(x+22, y+2, 4, 5, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#3b82f6';
             ctx.beginPath();
-            ctx.arc(x+8, y+4, 1.5, 0, Math.PI*2);
-            ctx.arc(x+20, y+4, 1.5, 0, Math.PI*2);
+            ctx.ellipse(x+8, y+2, 2.5, 3, 0, 0, Math.PI*2);
+            ctx.ellipse(x+22, y+2, 2.5, 3, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(x+7, y+1, 1.2, 0, Math.PI*2);
+            ctx.arc(x+21, y+1, 1.2, 0, Math.PI*2);
+            ctx.fill();
+            // Eye highlights
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x+5, y-1, 0.8, 0, Math.PI*2);
+            ctx.arc(x+19, y-1, 0.8, 0, Math.PI*2);
             ctx.fill();
             
             ctx.restore();
@@ -395,7 +426,7 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, true, '#3b82f6', '#3b82f6');
+                drawInfinity(c.x, c.y + floatY, c.radius, c.value, true, '#3b82f6', '#3b82f6');
             }
         }
 
@@ -435,9 +466,9 @@
             
             // Giant glowing purple infinity symbol in the sky (the main logo)
             ctx.save();
-            ctx.shadowBlur = 30;
+            ctx.shadowBlur = 35;
             ctx.shadowColor = '#a855f7';
-            ctx.globalAlpha = 0.7;
+            ctx.globalAlpha = 0.8;
             drawInfinity(W/2, H/3, 55, null, true, '#a855f7', '#a855f7');
             ctx.restore();
             
@@ -447,13 +478,7 @@
                 ctx.globalAlpha = 0.2;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#3b82f6';
-                ctx.translate(b.x, b.y);
-                ctx.scale(1, 0.7);
-                ctx.beginPath();
-                ctx.arc(-b.size*0.5, 0, b.size*0.4, 0, Math.PI*2);
-                ctx.arc(b.size*0.5, 0, b.size*0.4, 0, Math.PI*2);
-                ctx.fillStyle = '#3b82f6';
-                ctx.fill();
+                drawInfinity(b.x, b.y, b.size, null, true, '#3b82f6', '#3b82f6');
                 ctx.restore();
                 b.x -= b.speed;
                 if (b.x + b.size < 0) b.x = W + b.size;
@@ -472,6 +497,7 @@
             score = 0;
             currentSpeed = 2.5;
             worldOffset = 0;
+            hitBlinkCounter = 0;
             document.getElementById('score').innerHTML = '♾️ IFC: 0';
             player.y = GROUND_Y - player.height;
             player.vy = 0;
