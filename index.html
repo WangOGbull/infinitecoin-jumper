@@ -9,14 +9,14 @@
         body{background:#0a2a4a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
         .game-container{position:relative;width:100%;max-width:480px}
         canvas{display:block;width:100%;height:auto;border-radius:24px;background:#5c9ed4;cursor:pointer}
-        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.7);padding:8px 18px;border-radius:40px;color:#f5a623;font-weight:bold;font-size:22px;z-index:10}
+        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.7);padding:8px 18px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:22px;z-index:10}
         #controls{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;z-index:20}
-        .ctrl-btn{background:rgba(0,0,0,0.7);border:2px solid #f5a623;color:#f5a623;font-size:24px;font-weight:bold;padding:10px 28px;border-radius:60px;cursor:pointer}
-        .ctrl-btn:active{background:#f5a623;color:#000}
-        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #f5a623}
-        #gameOver h2{color:#f5a623;margin-bottom:15px}
+        .ctrl-btn{background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-size:24px;font-weight:bold;padding:10px 28px;border-radius:60px;cursor:pointer}
+        .ctrl-btn:active{background:#3b82f6;color:#000}
+        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
+        #gameOver h2{color:#3b82f6;margin-bottom:15px}
         #gameOver p{color:white;font-size:22px;margin-bottom:20px}
-        #restartBtn{background:#f5a623;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
+        #restartBtn{background:#3b82f6;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
         .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:white}
     </style>
 </head>
@@ -26,7 +26,7 @@
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <div id="controls"><button class="ctrl-btn" id="jumpBtn">▲ JUMP</button></div>
     <div id="gameOver"><h2>GAME OVER</h2><p>♾️ IFC: <span id="finalScore">0</span></p><button id="restartBtn">RESTART</button></div>
-    <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | DOUBLE JUMP</div>
+    <div class="game-footer">♾️ INFINITE COIN | AVOID VIRUSES | DOUBLE JUMP</div>
 </div>
 <script>
     (function(){
@@ -41,7 +41,7 @@
         let worldOffset = 0;
         let currentSpeed = 2.5;
 
-        let player = { x: 100, y: 0, vy: 0, width: 22, height: 26, grounded: false, doubleJumpUsed: false };
+        let player = { x: 100, y: 0, vy: 0, width: 24, height: 32, grounded: false, doubleJumpUsed: false };
 
         let groundSegments = [];
         const GROUND_Y = H - 60;
@@ -49,22 +49,35 @@
 
         function initGround() {
             groundSegments = [];
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 20; i++) {
                 groundSegments.push({ x: i * SEGMENT_WIDTH, y: GROUND_Y, w: SEGMENT_WIDTH });
             }
         }
 
         let collectibles = [];
+        let viruses = [];
 
         function spawnCollectible() {
-            let x = 200 + Math.random() * 200;
-            let y = GROUND_Y - 35 - Math.random() * 45;
+            let x = 250 + Math.random() * 200;
+            let y = GROUND_Y - 40 - Math.random() * 50;
             let value = Math.floor(Math.random() * 16) + 5;
-            collectibles.push({ x: x, y: y, radius: 12, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
+            collectibles.push({ x: x, y: y, radius: 11, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
         }
 
-        setInterval(() => { if (gameRunning && collectibles.length < 8) spawnCollectible(); }, 2000);
+        function spawnVirus() {
+            let x = 300 + Math.random() * 250;
+            viruses.push({ x: x, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+        }
+
+        setInterval(() => {
+            if (gameRunning && collectibles.length < 6) spawnCollectible();
+        }, 1800);
+        setInterval(() => {
+            if (gameRunning && viruses.length < 3) spawnVirus();
+        }, 2500);
+
         for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i * 400);
+        for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(), i * 1000);
 
         function updateCollectibles() {
             for (let i = 0; i < collectibles.length; i++) {
@@ -74,10 +87,24 @@
                     c.collected = true;
                     score += c.value;
                     document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
-                    currentSpeed = 2.5 + Math.floor(score / 50) * 0.4;
-                    if (currentSpeed > 6) currentSpeed = 6;
+                    currentSpeed = 2.5 + Math.floor(score / 50) * 0.3;
+                    if (currentSpeed > 5.5) currentSpeed = 5.5;
                 }
                 if (c.x + c.radius < 0 || c.collected) { collectibles.splice(i, 1); i--; }
+            }
+        }
+
+        function updateViruses() {
+            for (let i = 0; i < viruses.length; i++) {
+                let v = viruses[i];
+                v.x -= currentSpeed;
+                v.shake = Math.sin(Date.now() * 0.015 + i) * 2;
+                if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
+                    v.active = true;
+                    score = Math.max(0, score - 10);
+                    document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+                }
+                if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
         }
 
@@ -102,8 +129,13 @@
 
         function jump() {
             if (!gameRunning) return;
-            if (player.grounded) { player.vy = -9.5; player.grounded = false; }
-            else if (!player.doubleJumpUsed) { player.vy = -9.0; player.doubleJumpUsed = true; }
+            if (player.grounded) { 
+                player.vy = -9.5; 
+                player.grounded = false; 
+            } else if (!player.doubleJumpUsed) { 
+                player.vy = -9.0; 
+                player.doubleJumpUsed = true; 
+            }
         }
 
         function updateWorld() {
@@ -122,7 +154,7 @@
             ctx.beginPath();
             ctx.arc(-size*0.5, 0, size*0.45, 0, Math.PI*2);
             ctx.arc(size*0.5, 0, size*0.45, 0, Math.PI*2);
-            ctx.fillStyle = '#f5a623';
+            ctx.fillStyle = '#3b82f6';
             ctx.fill();
             ctx.beginPath();
             ctx.arc(-size*0.5, 0, size*0.25, 0, Math.PI*2);
@@ -130,24 +162,80 @@
             ctx.fillStyle = '#0f2f3f';
             ctx.fill();
             ctx.restore();
-            ctx.font = `bold 10px monospace`;
-            ctx.fillStyle = 'white';
-            ctx.fillText(`+${value}`, x-10, y-12);
+            ctx.font = `bold 12px monospace`;
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = 'black';
+            ctx.fillText(`+${value}`, x-9, y-14);
+            ctx.shadowBlur = 0;
+        }
+
+        function drawVirus(x, y, shake) {
+            ctx.save();
+            ctx.translate(x + shake, y);
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.arc(9, 10, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(9, 10, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(6, 7, 2, 0, Math.PI * 2);
+            ctx.arc(12, 7, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(5.5, 6.5, 1, 0, Math.PI * 2);
+            ctx.arc(11.5, 6.5, 1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.ellipse(9, 13, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(9 + Math.sin(i) * 12, 10 + Math.cos(i*2) * 8);
+                ctx.lineTo(9 + Math.sin(i+0.5) * 6, 10 + Math.cos((i+0.5)*2) * 4);
+                ctx.lineTo(9 + Math.sin(i-0.5) * 6, 10 + Math.cos((i-0.5)*2) * 4);
+                ctx.fillStyle = '#aa2222';
+                ctx.fill();
+            }
+            ctx.restore();
         }
 
         function drawPlayer() {
             let x = player.x, y = player.y;
-            ctx.fillStyle = '#C22B2B';
-            ctx.fillRect(x+4, y-6, 14, 8);
-            ctx.fillStyle = '#FDD7A4';
-            ctx.fillRect(x+2, y, 18, 18);
-            ctx.fillStyle = '#000';
-            ctx.fillRect(x+6, y+4, 3, 4);
-            ctx.fillRect(x+13, y+4, 3, 4);
-            ctx.fillStyle = '#E52525';
-            ctx.fillRect(x+2, y+16, 18, 12);
+            // Legs
             ctx.fillStyle = '#2C2C8C';
-            ctx.fillRect(x, y+24, 22, 8);
+            ctx.fillRect(x+4, y+26, 6, 10);
+            ctx.fillRect(x+14, y+26, 6, 10);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x+3, y+34, 7, 4);
+            ctx.fillRect(x+13, y+34, 7, 4);
+            // Body
+            ctx.fillStyle = '#E52525';
+            ctx.fillRect(x+4, y+12, 16, 18);
+            // Arms
+            ctx.fillStyle = '#E52525';
+            ctx.fillRect(x-2, y+16, 6, 6);
+            ctx.fillRect(x+20, y+16, 6, 6);
+            ctx.fillStyle = '#FDD7A4';
+            ctx.fillRect(x-2, y+16, 4, 4);
+            ctx.fillRect(x+22, y+16, 4, 4);
+            // Head
+            ctx.fillStyle = '#FDD7A4';
+            ctx.fillRect(x+4, y, 16, 16);
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x+8, y+4, 3, 4);
+            ctx.fillRect(x+13, y+4, 3, 4);
+            // Hat
+            ctx.fillStyle = '#C22B2B';
+            ctx.fillRect(x+2, y-4, 20, 6);
+            ctx.fillRect(x+6, y-8, 12, 6);
         }
 
         function drawGround() {
@@ -163,7 +251,13 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius+2, c.value);
+                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value);
+            }
+        }
+
+        function drawViruses() {
+            for (let v of viruses) {
+                drawVirus(v.x, v.y, v.shake);
             }
         }
 
@@ -205,8 +299,10 @@
             player.doubleJumpUsed = false;
             player.x = 100;
             collectibles = [];
+            viruses = [];
             initGround();
             for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i * 300);
+            for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(), i * 800);
             document.getElementById('gameOver').style.display = 'none';
         }
 
@@ -221,6 +317,7 @@
                 updateWorld();
                 updatePlayer();
                 updateCollectibles();
+                updateViruses();
             }
         }
 
@@ -228,6 +325,7 @@
             drawBackground();
             drawGround();
             drawCollectibles();
+            drawViruses();
             drawPlayer();
             ctx.font = 'bold 12px monospace';
             ctx.fillStyle = 'white';
