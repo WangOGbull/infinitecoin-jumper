@@ -129,18 +129,15 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Game state
         let gameRunning = true;
         let score = 0;
         let worldOffset = 0;
         let currentSpeed = 2.5;
         let frame = 0;
-        let hitBlinkCounter = 0; // For rapid blink on hit
+        let hitBlinkCounter = 0;
 
-        // Player
-        let player = { x: 100, y: 0, vy: 0, width: 30, height: 38, grounded: false, doubleJumpUsed: false };
+        let player = { x: 100, y: 0, vy: 0, width: 32, height: 40, grounded: false, doubleJumpUsed: false };
 
-        // Ground
         let groundSegments = [];
         const GROUND_Y = H - 60;
         const SEGMENT_WIDTH = 60;
@@ -152,7 +149,6 @@
             }
         }
 
-        // Collectibles and viruses
         let collectibles = [];
         let viruses = [];
 
@@ -197,7 +193,7 @@
                     v.active = true;
                     score = Math.max(0, score - 10);
                     document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
-                    hitBlinkCounter = 14; // Rapid blink (7 full blinks)
+                    hitBlinkCounter = 14;
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
@@ -243,23 +239,20 @@
             }
         }
 
-        // Draw correct infinity symbol (♾️) - two crossing loops
-        function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
+        function drawInfinity(x, y, size, value, color = '#3b82f6', glowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            if (isGlowing) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = shadowColor;
-            }
-            // Draw the two intersecting loops correctly
-            ctx.beginPath();
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = glowColor;
             // Left loop
+            ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             // Right loop
+            ctx.beginPath();
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = color;
             ctx.fill();
-            // Inner cutout to make it look like a true infinity symbol
+            // Inner cutout
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
@@ -267,42 +260,40 @@
             ctx.fill();
             ctx.globalCompositeOperation = 'source-over';
             ctx.restore();
-            
             if (value) {
-                ctx.font = `bold ${size}px monospace`;
-                ctx.fillStyle = color;
-                ctx.shadowBlur = 5;
-                ctx.shadowColor = shadowColor;
-                ctx.fillText(`+${value}`, x-12, y-18);
+                ctx.font = `bold ${size-2}px monospace`;
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = glowColor;
+                ctx.fillText(`+${value}`, x-11, y-16);
                 ctx.shadowBlur = 0;
             }
         }
 
-        // Draw virus (angry, shaky)
         function drawVirus(x, y, shake) {
             ctx.save();
             ctx.translate(x + shake, y);
             ctx.fillStyle = '#8b0000';
             ctx.beginPath();
-            ctx.arc(9, 10, 9, 0, Math.PI * 2);
+            ctx.arc(9, 10, 9, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#ff4444';
             ctx.beginPath();
-            ctx.arc(9, 10, 6, 0, Math.PI * 2);
+            ctx.arc(9, 10, 6, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(6, 7, 2, 0, Math.PI * 2);
-            ctx.arc(12, 7, 2, 0, Math.PI * 2);
+            ctx.arc(6, 7, 2, 0, Math.PI*2);
+            ctx.arc(12, 7, 2, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#000000';
             ctx.beginPath();
-            ctx.arc(5.5, 6.5, 1, 0, Math.PI * 2);
-            ctx.arc(11.5, 6.5, 1, 0, Math.PI * 2);
+            ctx.arc(5.5, 6.5, 1, 0, Math.PI*2);
+            ctx.arc(11.5, 6.5, 1, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
-            ctx.ellipse(9, 13, 3, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(9, 13, 3, 2, 0, 0, Math.PI*2);
             ctx.fill();
             for (let i = 0; i < 5; i++) {
                 ctx.beginPath();
@@ -315,100 +306,97 @@
             ctx.restore();
         }
 
-        // Draw anime-style infinite being with 3D shading and depth
         function drawPlayer() {
             let x = player.x, y = player.y;
-            let legOffset = Math.sin(Date.now() * 0.012) * 4;
-            let armOffset = Math.sin(Date.now() * 0.015) * 6;
-            let orbRotate = Date.now() * 0.008;
+            let legSwing = Math.sin(Date.now() * 0.012) * 5;
+            let armSwing = Math.sin(Date.now() * 0.015) * 6;
+            let orbSpin = Date.now() * 0.008;
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
             
             ctx.save();
             if (blink) {
-                ctx.globalAlpha = 0.3;
+                ctx.globalAlpha = 0.4;
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = '#ffffff';
             }
             
-            // Shadow under character for 3D effect
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            // Ground shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.beginPath();
-            ctx.ellipse(x+15, y+42, 12, 5, 0, 0, Math.PI*2);
+            ctx.ellipse(x+16, y+44, 14, 5, 0, 0, Math.PI*2);
             ctx.fill();
             
-            // Legs with 3D shading
-            let gradLeg = ctx.createLinearGradient(x+5, y+28, x+11, y+38);
-            gradLeg.addColorStop(0, '#1a5a8a');
-            gradLeg.addColorStop(1, '#0f3a5a');
-            ctx.fillStyle = gradLeg;
-            ctx.fillRect(x+5, y+28, 7, 14 + legOffset);
-            ctx.fillRect(x+18, y+28 - legOffset, 7, 14 + legOffset);
+            // Legs
+            ctx.fillStyle = '#1a5a8a';
+            ctx.fillRect(x+6, y+30, 7, 12 + legSwing);
+            ctx.fillRect(x+19, y+30 - legSwing, 7, 12 + legSwing);
             
             // Shoes
             ctx.fillStyle = '#0a2a4a';
-            ctx.fillRect(x+3, y+40, 9, 6);
-            ctx.fillRect(x+18, y+40, 9, 6);
+            ctx.fillRect(x+4, y+40, 9, 6);
+            ctx.fillRect(x+19, y+40, 9, 6);
             
-            // Body with 3D gradient
-            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
+            // Body with gradient
+            let gradBody = ctx.createLinearGradient(x+5, y+12, x+27, y+34);
             gradBody.addColorStop(0, '#3b82f6');
             gradBody.addColorStop(1, '#1a4a8a');
             ctx.fillStyle = gradBody;
-            ctx.fillRect(x+5, y+12, 20, 24);
+            ctx.fillRect(x+5, y+12, 22, 24);
             
-            // Chest infinity symbol
-            drawInfinity(x+15, y+25, 10, null, true, '#3b82f6', '#3b82f6');
+            // Chest infinity
+            drawInfinity(x+16, y+26, 9, null, '#3b82f6', '#3b82f6');
             
-            // Arms with 3D shading
-            let gradArm = ctx.createLinearGradient(x-3, y+18, x+3, y+26);
-            gradArm.addColorStop(0, '#3b82f6');
-            gradArm.addColorStop(1, '#1a4a8a');
-            ctx.fillStyle = gradArm;
-            ctx.fillRect(x-4 + armOffset, y+18, 8, 10);
-            ctx.fillRect(x+26 - armOffset, y+18, 8, 10);
+            // Arms
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(x-5 + armSwing, y+18, 8, 10);
+            ctx.fillRect(x+29 - armSwing, y+18, 8, 10);
             
-            // Orbs in hands (glowing infinite samples)
+            // Hand orbs
             ctx.save();
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#3b82f6';
             ctx.beginPath();
-            ctx.arc(x-7 + armOffset + Math.sin(orbRotate) * 3, y+23, 8, 0, Math.PI*2);
+            ctx.arc(x-8 + armSwing + Math.sin(orbSpin)*3, y+24, 8, 0, Math.PI*2);
             ctx.fillStyle = '#3b82f6';
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(x+32 - armOffset + Math.cos(orbRotate) * 3, y+23, 8, 0, Math.PI*2);
+            ctx.arc(x+35 - armSwing + Math.cos(orbSpin)*3, y+24, 8, 0, Math.PI*2);
             ctx.fill();
-            drawInfinity(x-7 + armOffset + Math.sin(orbRotate) * 3, y+23, 7, null, true, '#3b82f6', '#3b82f6');
-            drawInfinity(x+32 - armOffset + Math.cos(orbRotate) * 3, y+23, 7, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x-8 + armSwing + Math.sin(orbSpin)*3, y+24, 7, null, '#3b82f6', '#3b82f6');
+            drawInfinity(x+35 - armSwing + Math.cos(orbSpin)*3, y+24, 7, null, '#3b82f6', '#3b82f6');
             ctx.restore();
             
-            // Head (large infinity symbol with anime eyes)
-            drawInfinity(x+15, y+6, 18, null, true, '#3b82f6', '#3b82f6');
+            // Head (large infinity)
+            drawInfinity(x+16, y+6, 20, null, '#3b82f6', '#3b82f6');
             
-            // Anime-style large glowing eyes
+            // Anime eyes
             ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 8;
             ctx.shadowColor = '#3b82f6';
             ctx.beginPath();
-            ctx.ellipse(x+8, y+2, 4, 5, 0, 0, Math.PI*2);
-            ctx.ellipse(x+22, y+2, 4, 5, 0, 0, Math.PI*2);
+            ctx.ellipse(x+9, y+2, 4.5, 6, 0, 0, Math.PI*2);
+            ctx.ellipse(x+23, y+2, 4.5, 6, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#3b82f6';
             ctx.beginPath();
-            ctx.ellipse(x+8, y+2, 2.5, 3, 0, 0, Math.PI*2);
-            ctx.ellipse(x+22, y+2, 2.5, 3, 0, 0, Math.PI*2);
+            ctx.ellipse(x+9, y+2, 2.8, 4, 0, 0, Math.PI*2);
+            ctx.ellipse(x+23, y+2, 2.8, 4, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#000000';
             ctx.beginPath();
-            ctx.arc(x+7, y+1, 1.2, 0, Math.PI*2);
-            ctx.arc(x+21, y+1, 1.2, 0, Math.PI*2);
+            ctx.arc(x+8, y+1, 1.5, 0, Math.PI*2);
+            ctx.arc(x+22, y+1, 1.5, 0, Math.PI*2);
             ctx.fill();
-            // Eye highlights
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(x+5, y-1, 0.8, 0, Math.PI*2);
-            ctx.arc(x+19, y-1, 0.8, 0, Math.PI*2);
+            ctx.arc(x+6, y-1, 0.8, 0, Math.PI*2);
+            ctx.arc(x+20, y-1, 0.8, 0, Math.PI*2);
             ctx.fill();
+            
+            // Anime hair
+            ctx.fillStyle = '#1a2a4a';
+            ctx.fillRect(x+4, y-8, 24, 8);
+            ctx.fillRect(x+6, y-12, 20, 6);
             
             ctx.restore();
         }
@@ -426,7 +414,7 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius, c.value, true, '#3b82f6', '#3b82f6');
+                drawInfinity(c.x, c.y + floatY, c.radius, c.value, '#3b82f6', '#3b82f6');
             }
         }
 
@@ -436,19 +424,18 @@
             }
         }
 
-        // Cosmic background with stars, nebula, and giant glowing purple infinity logo
+        // Stars
         let stars = [];
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 120; i++) {
             stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
         }
         
         let bgInfinity = [];
-        for (let i = 0; i < 10; i++) {
-            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 25 + Math.random() * 20, speed: 0.05 + Math.random() * 0.15 });
+        for (let i = 0; i < 12; i++) {
+            bgInfinity.push({ x: Math.random() * W, y: 40 + Math.random() * 180, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.15 });
         }
 
         function drawBackground() {
-            // Deep space gradient
             let grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#0a0a2a');
             grad.addColorStop(0.5, '#15153a');
@@ -456,7 +443,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, W, H);
             
-            // Stars
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
@@ -464,21 +450,20 @@
                 if (s.x < 0) s.x = W;
             }
             
-            // Giant glowing purple infinity symbol in the sky (the main logo)
+            // GIANT PURPLE INFINITY SYMBOL - CENTERED
             ctx.save();
-            ctx.shadowBlur = 35;
+            ctx.shadowBlur = 40;
             ctx.shadowColor = '#a855f7';
-            ctx.globalAlpha = 0.8;
-            drawInfinity(W/2, H/3, 55, null, true, '#a855f7', '#a855f7');
+            ctx.globalAlpha = 0.9;
+            drawInfinity(W/2, H/3.2, 65, null, '#a855f7', '#a855f7');
             ctx.restore();
             
-            // Smaller glowing infinity logos in background
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.2;
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#3b82f6';
-                drawInfinity(b.x, b.y, b.size, null, true, '#3b82f6', '#3b82f6');
+                drawInfinity(b.x, b.y, b.size, null, '#3b82f6', '#3b82f6');
                 ctx.restore();
                 b.x -= b.speed;
                 if (b.x + b.size < 0) b.x = W + b.size;
@@ -512,7 +497,6 @@
             document.getElementById('gameOver').style.display = 'none';
         }
 
-        // Controls
         document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); jump(); };
         document.getElementById('restartBtn').onclick = () => restartGame();
         window.onkeydown = (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } };
@@ -539,7 +523,7 @@
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 5;
             ctx.shadowColor = '#3b82f6';
-            ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 30);
+            ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32);
             ctx.shadowBlur = 0;
         }
 
