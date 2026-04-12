@@ -2,209 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Infinitecoin Jumper - Final</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #0a0a2a;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: monospace;
-            touch-action: manipulation;
-        }
-        .game-container {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            border-radius: 24px;
-            cursor: pointer;
-            touch-action: manipulation;
-        }
-        
-        /* Top UI - Properly spaced */
-        #score {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
-            padding: 6px 14px;
-            border-radius: 40px;
-            color: #3b82f6;
-            font-weight: bold;
-            font-size: 18px;
-            z-index: 10;
-            border: 1px solid #3b82f6;
-            display: none;
-        }
-        #healthBarContainer {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 12px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 20px;
-            z-index: 10;
-            display: none;
-            overflow: hidden;
-            border: 1px solid #3b82f6;
-        }
-        #healthBar {
-            width: 100%;
-            height: 100%;
-            background: #00ff00;
-            transition: width 0.2s ease;
-        }
-        #pauseBtn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
-            padding: 4px 12px;
-            border-radius: 40px;
-            color: #3b82f6;
-            font-weight: bold;
-            font-size: 14px;
-            z-index: 10;
-            border: 1px solid #3b82f6;
-            cursor: pointer;
-            display: none;
-        }
-        
-        /* Jump button - Bottom right corner, not blocking view */
-        .ctrl-btn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-            font-weight: bold;
-            cursor: pointer;
-            backdrop-filter: blur(8px);
-            z-index: 20;
-            display: none;
-            touch-action: manipulation;
-            transition: all 0.05s ease;
-            font-size: 22px;
-            padding: 12px 24px;
-            border-radius: 60px;
-        }
-        .ctrl-btn:active {
-            background: #3b82f6;
-            color: #000;
-            transform: scale(0.96);
-        }
-        
-        #gameOver {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px 35px;
-            border-radius: 32px;
-            text-align: center;
-            z-index: 30;
-            display: none;
-            border: 1px solid #3b82f6;
-        }
-        #gameOver h2 { color: #3b82f6; margin-bottom: 15px; }
-        #gameOver p { color: white; font-size: 22px; margin-bottom: 20px; }
-        #restartBtn {
-            background: #3b82f6;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 40px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .game-footer {
-            position: absolute;
-            bottom: -28px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 10px;
-            color: #3b82f6;
-            display: none;
-        }
-        #pauseOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            z-index: 25;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
-        #pauseOverlay .pause-title {
-            color: #3b82f6;
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        #pauseOverlay .pause-stats {
-            color: white;
-            font-size: 18px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        #pauseOverlay .pause-stats span {
-            color: #3b82f6;
-            font-weight: bold;
-        }
-        .pause-btn-custom {
-            background: rgba(59,130,246,0.2);
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-            padding: 10px 30px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: 5px;
-            min-width: 160px;
-            text-align: center;
-        }
-        .pause-btn-custom:active {
-            background: #3b82f6;
-            color: #000;
-            transform: scale(0.96);
-        }
-        .pause-buttons-row {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: center;
-        }
+        *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
+        body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
+        .game-container{position:relative;width:100%;max-width:480px}
+        canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer}
+        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;display:none}
+        #healthBarContainer{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:120px;height:12px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
+        #healthBar{width:100%;height:100%;background:#00ff00;transition:width 0.2s ease}
+        #pauseBtn{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:14px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
+        .ctrl-btn{position:absolute;bottom:20px;right:20px;background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;font-size:22px;padding:12px 24px;border-radius:60px}
+        .ctrl-btn:active{background:#3b82f6;color:#000;transform:scale(0.96)}
+        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
+        #gameOver h2{color:#3b82f6;margin-bottom:15px}
+        #gameOver p{color:white;font-size:22px;margin-bottom:20px}
+        #restartBtn{background:#3b82f6;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
+        .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:#3b82f6;display:none}
+        #pauseOverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);border-radius:24px;z-index:25;display:none;flex-direction:column;justify-content:center;align-items:center;gap:20px}
+        #pauseOverlay .pause-title{color:#3b82f6;font-size:28px;font-weight:bold}
+        #pauseOverlay .pause-stats{color:white;font-size:18px;text-align:center}
+        #pauseOverlay .pause-stats span{color:#3b82f6;font-weight:bold}
+        .pause-btn-custom{background:rgba(59,130,246,0.2);border:2px solid #3b82f6;color:#3b82f6;padding:10px 30px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;margin:5px;min-width:160px;text-align:center}
+        .pause-btn-custom:active{background:#3b82f6;color:#000;transform:scale(0.96)}
+        .pause-buttons-row{display:flex;flex-direction:column;gap:12px;align-items:center}
     </style>
 </head>
 <body>
@@ -246,9 +68,11 @@
         let hitBlinkCounter = 0;
         let difficultyTier = 0;
         let virusCount = 0;
+        let entranceAnimation = false;
+        let entranceProgress = 0;
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
 
-        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false };
+        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJumpPower: -9.5 };
 
         let groundSegments = [];
         const GROUND_Y = H - 60;
@@ -263,10 +87,11 @@
 
         let collectibles = [];
         let viruses = [];
+        let blackViruses = [];
         let healthItems = [];
 
         function getCoinValue() {
-            if (difficultyTier >= 2) return Math.floor(Math.random() * 31) + 20;
+            if (difficultyTier >= 2) return Math.floor(Math.random() * 61) + 40;
             if (difficultyTier >= 1) return Math.floor(Math.random() * 21) + 10;
             return Math.floor(Math.random() * 16) + 5;
         }
@@ -278,15 +103,23 @@
             collectibles.push({ x: x, y: y, radius: 11, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
         }
 
-        function spawnVirus() {
-            viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+        function spawnVirus(isBlack = false) {
+            if (isBlack) {
+                blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+            } else {
+                viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+            }
         }
 
-        function spawnClusteredViruses(count) {
+        function spawnClusteredViruses(count, isBlack = false) {
             let baseX = 350 + Math.random() * 150;
-            let spacing = 28;
+            let spacing = isBlack ? 38 : 28;
             for (let i = 0; i < count; i++) {
-                viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                if (isBlack) {
+                    blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                } else {
+                    viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                }
             }
         }
 
@@ -310,6 +143,17 @@
             }
         }
 
+        function startEntrance() {
+            gameState = "entrance";
+            entranceAnimation = true;
+            entranceProgress = 0;
+            document.getElementById('score').style.display = 'none';
+            document.getElementById('healthBarContainer').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('jumpBtn').style.display = 'none';
+            document.querySelector('.game-footer').style.display = 'none';
+        }
+
         function startGame() {
             gameState = "playing";
             gameRunning = true;
@@ -323,7 +167,9 @@
             virusCount = 0;
             collectibles = [];
             viruses = [];
+            blackViruses = [];
             healthItems = [];
+            player.baseJumpPower = -9.5;
             initGround();
             player.y = GROUND_Y - player.height;
             player.vy = 0;
@@ -335,23 +181,28 @@
             document.getElementById('healthBarContainer').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
             document.getElementById('jumpBtn').style.display = 'block';
-            document.getElementById('gameOver').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'block';
+            document.getElementById('gameOver').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
             updateUI();
             
             for (let i = 0; i < 4; i++) setTimeout(() => spawnCollectible(), i * 300);
-            for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(), i * 800);
+            for (let i = 0; i < 2; i++) setTimeout(() => spawnVirus(false), i * 800);
             
             if (spawnInterval) clearInterval(spawnInterval);
             if (virusInterval) clearInterval(virusInterval);
             spawnInterval = setInterval(() => { if (gameRunning && !paused && collectibles.length < 6) spawnCollectible(); }, 1800);
             virusInterval = setInterval(() => { 
-                if (gameRunning && !paused && viruses.length < 4) {
+                if (gameRunning && !paused) {
                     virusCount++;
-                    if (difficultyTier >= 2) spawnClusteredViruses(3);
-                    else if (difficultyTier >= 1) spawnClusteredViruses(2);
-                    else spawnVirus();
+                    if (difficultyTier >= 2) {
+                        if (viruses.length < 3) spawnClusteredViruses(2, false);
+                        if (blackViruses.length < 2) spawnClusteredViruses(2, true);
+                    } else if (difficultyTier >= 1) {
+                        if (viruses.length < 3) spawnClusteredViruses(2, false);
+                    } else {
+                        if (viruses.length < 3) spawnVirus(false);
+                    }
                     if (virusCount >= 6 && virusCount <= 8) {
                         spawnHealthItem();
                         virusCount = 0;
@@ -369,12 +220,18 @@
                     score += c.value;
                     updateUI();
                     
-                    if (score >= 1000 && difficultyTier === 0) { difficultyTier = 1; currentSpeed = 3.8; }
-                    if (score >= 1600 && difficultyTier === 1) { difficultyTier = 2; currentSpeed = 5.0; }
+                    if (score >= 2000 && difficultyTier === 1) {
+                        difficultyTier = 2;
+                        currentSpeed = 5.5;
+                        player.baseJumpPower = -11.0;
+                    } else if (score >= 1000 && difficultyTier === 0) {
+                        difficultyTier = 1;
+                        currentSpeed = 3.8;
+                    }
                     
                     if (difficultyTier === 2) {
-                        currentSpeed = 5.0 + Math.floor((score - 1600) / 400) * 0.3;
-                        if (currentSpeed > 6.8) currentSpeed = 6.8;
+                        currentSpeed = 5.5 + Math.floor((score - 2000) / 400) * 0.3;
+                        if (currentSpeed > 7.0) currentSpeed = 7.0;
                     } else if (difficultyTier === 1) {
                         currentSpeed = 3.8 + Math.floor((score - 1000) / 300) * 0.2;
                         if (currentSpeed > 4.8) currentSpeed = 4.8;
@@ -414,9 +271,23 @@
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
+            for (let i = 0; i < blackViruses.length; i++) {
+                let v = blackViruses[i];
+                v.x -= currentSpeed;
+                v.shake = Math.sin(Date.now() * 0.015 + i) * 3;
+                if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
+                    v.active = true;
+                    health = Math.max(0, health - 30);
+                    updateUI();
+                    hitBlinkCounter = 14;
+                    if (health <= 0) gameOver();
+                }
+                if (v.x + v.width < 0) { blackViruses.splice(i, 1); i--; }
+            }
         }
 
         function updatePlayer() {
+            let jumpPower = player.baseJumpPower;
             player.vy += 0.65;
             player.y += player.vy;
             player.grounded = false;
@@ -437,11 +308,12 @@
 
         function jump() {
             if (!gameRunning || paused) return;
+            let jumpPower = player.baseJumpPower;
             if (player.grounded) { 
-                player.vy = -9.5; 
+                player.vy = jumpPower; 
                 player.grounded = false; 
             } else if (!player.doubleJumpUsed) { 
-                player.vy = -9.0; 
+                player.vy = jumpPower + 0.5; 
                 player.doubleJumpUsed = true; 
             }
         }
@@ -467,15 +339,14 @@
             }
         }
 
-        function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
+        function drawInfinity(x, y, size, value, color = '#3b82f6', glowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            if (isGlowing) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = shadowColor;
-            }
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = glowColor;
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
+            ctx.beginPath();
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = color;
             ctx.fill();
@@ -490,7 +361,6 @@
                 ctx.font = `bold ${size-2}px monospace`;
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowBlur = 4;
-                ctx.shadowColor = shadowColor;
                 ctx.fillText(`+${value}`, x-10, y-15);
                 ctx.shadowBlur = 0;
             }
@@ -503,6 +373,7 @@
             ctx.shadowColor = '#00ff00';
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
+            ctx.beginPath();
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = '#00ff00';
             ctx.fill();
@@ -515,20 +386,19 @@
             ctx.restore();
             ctx.font = `bold ${size-4}px monospace`;
             ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = '#00ff00';
             ctx.fillText('+50%', x-15, y-12);
-            ctx.shadowBlur = 0;
         }
 
-        function drawVirus(x, y, shake) {
+        function drawVirus(x, y, shake, isBlack = false) {
             ctx.save();
             ctx.translate(x + shake, y);
-            ctx.fillStyle = '#8b0000';
+            let mainColor = isBlack ? '#1a1a1a' : '#8b0000';
+            let innerColor = isBlack ? '#333333' : '#ff4444';
+            ctx.fillStyle = mainColor;
             ctx.beginPath();
             ctx.arc(9, 10, 9, 0, Math.PI*2);
             ctx.fill();
-            ctx.fillStyle = '#ff4444';
+            ctx.fillStyle = innerColor;
             ctx.beginPath();
             ctx.arc(9, 10, 6, 0, Math.PI*2);
             ctx.fill();
@@ -542,7 +412,7 @@
             ctx.arc(5.5, 6.5, 1, 0, Math.PI*2);
             ctx.arc(11.5, 6.5, 1, 0, Math.PI*2);
             ctx.fill();
-            ctx.fillStyle = '#ff0000';
+            ctx.fillStyle = isBlack ? '#660000' : '#ff0000';
             ctx.beginPath();
             ctx.ellipse(9, 13, 3, 2, 0, 0, Math.PI*2);
             ctx.fill();
@@ -551,7 +421,7 @@
                 ctx.moveTo(9 + Math.sin(i) * 12, 10 + Math.cos(i*2) * 8);
                 ctx.lineTo(9 + Math.sin(i+0.5) * 6, 10 + Math.cos((i+0.5)*2) * 4);
                 ctx.lineTo(9 + Math.sin(i-0.5) * 6, 10 + Math.cos((i-0.5)*2) * 4);
-                ctx.fillStyle = '#aa2222';
+                ctx.fillStyle = isBlack ? '#440000' : '#aa2222';
                 ctx.fill();
             }
             ctx.restore();
@@ -590,7 +460,7 @@
             ctx.fillStyle = gradBody;
             ctx.fillRect(x+5, y+12, 20, 24);
             
-            drawInfinity(x+15, y+24, 9, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x+15, y+24, 9, null, '#3b82f6', '#3b82f6');
             
             ctx.fillStyle = '#3b82f6';
             ctx.fillRect(x-3 + armOffset, y+18, 8, 10);
@@ -606,11 +476,11 @@
             ctx.beginPath();
             ctx.arc(x+28 - armOffset + Math.cos(orbRotate) * 3, y+23, 7, 0, Math.PI*2);
             ctx.fill();
-            drawInfinity(x-6 + armOffset + Math.sin(orbRotate) * 3, y+23, 6, null, true, '#3b82f6', '#3b82f6');
-            drawInfinity(x+28 - armOffset + Math.cos(orbRotate) * 3, y+23, 6, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x-6 + armOffset + Math.sin(orbRotate) * 3, y+23, 6, null, '#3b82f6', '#3b82f6');
+            drawInfinity(x+28 - armOffset + Math.cos(orbRotate) * 3, y+23, 6, null, '#3b82f6', '#3b82f6');
             ctx.restore();
             
-            drawInfinity(x+15, y+6, 16, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(x+15, y+6, 16, null, '#3b82f6', '#3b82f6');
             
             ctx.fillStyle = '#ffffff';
             ctx.shadowBlur = 10;
@@ -651,7 +521,7 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, true, '#3b82f6', '#3b82f6');
+                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, '#3b82f6', '#3b82f6');
             }
         }
 
@@ -663,20 +533,14 @@
         }
 
         function drawViruses() {
-            for (let v of viruses) {
-                drawVirus(v.x, v.y, v.shake);
-            }
+            for (let v of viruses) drawVirus(v.x, v.y, v.shake, false);
+            for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true);
         }
 
         let stars = [];
-        for (let i = 0; i < 150; i++) {
-            stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
-        }
-        
+        for (let i = 0; i < 150; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
         let bgInfinity = [];
-        for (let i = 0; i < 6; i++) {
-            bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
-        }
+        for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
             let grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -685,31 +549,43 @@
             grad.addColorStop(1, '#1a1a3a');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, W, H);
-            
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
                 s.x -= 0.1;
                 if (s.x < 0) s.x = W;
             }
-            
             ctx.save();
             ctx.shadowBlur = 35;
             ctx.shadowColor = '#3b82f6';
             ctx.globalAlpha = 0.85;
-            drawInfinity(W/2, H/3.2, 65, null, true, '#3b82f6', '#3b82f6');
+            drawInfinity(W/2, H/3.2, 65, null, '#3b82f6', '#3b82f6');
             ctx.restore();
-            
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.15;
                 ctx.shadowBlur = 8;
-                ctx.shadowColor = '#3b82f6';
-                drawInfinity(b.x, b.y, b.size, null, true, '#3b82f6', '#3b82f6');
+                drawInfinity(b.x, b.y, b.size, null, '#3b82f6', '#3b82f6');
                 ctx.restore();
                 b.x -= b.speed;
                 if (b.x + b.size < 0) b.x = W + b.size;
             }
+        }
+
+        function drawEntrance() {
+            drawBackground();
+            let logoSize = 40 + entranceProgress * 25;
+            if (logoSize > 100) logoSize = 100;
+            drawInfinity(W/2, H/2, logoSize, null, '#a855f7', '#a855f7');
+            if (entranceProgress > 20) {
+                let charX = W/2 + (entranceProgress - 20) * 3;
+                if (charX > 100) charX = 100;
+                player.x = charX;
+                player.y = GROUND_Y - player.height;
+                drawPlayer();
+            }
+            entranceProgress++;
+            if (entranceProgress > 60) startGame();
         }
 
         function gameOver() {
@@ -726,152 +602,49 @@
             document.getElementById('pauseOverlay').style.display = 'none';
         }
 
-        function restartGame() {
-            startGame();
-        }
-
-        function exitToMenu() {
-            gameState = "menu";
-            gameRunning = false;
-            paused = false;
-            document.getElementById('score').style.display = 'none';
-            document.getElementById('healthBarContainer').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'none';
-            document.getElementById('jumpBtn').style.display = 'none';
-            document.querySelector('.game-footer').style.display = 'none';
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('pauseOverlay').style.display = 'none';
-        }
+        function restartGame() { startGame(); }
+        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
 
         function drawMenu() {
             drawBackground();
-            
             ctx.font = 'bold 28px monospace';
             ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#3b82f6';
             ctx.fillText('INFINITE JUMPER', W/2-120, H/3 - 20);
-            
             ctx.font = '16px monospace';
             ctx.fillStyle = '#ffffff';
-            ctx.fillText('Welcome to Infinite Jumper!', W/2-105, H/3 + 30);
-            ctx.fillText('Jump to catch and earn real', W/2-110, H/3 + 55);
+            ctx.fillText('Jump to catch and earn', W/2-105, H/3 + 30);
             ctx.fillStyle = '#3b82f6';
-            ctx.fillText('INFINITECOIN (IFC)', W/2-85, H/3 + 75);
-            
+            ctx.fillText('INFINITECOIN (IFC)', W/2-85, H/3 + 55);
             ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 8;
             ctx.fillRect(W/2-60, H/2 + 100, 120, 42);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 18px monospace';
             ctx.fillText('START', W/2-25, H/2 + 128);
-            ctx.shadowBlur = 0;
         }
 
-        function updateGame() {
-            if (gameState === "playing" && gameRunning && !paused) {
-                updateWorld();
-                updatePlayer();
-                updateCollectibles();
-                updateHealthItems();
-                updateViruses();
-            }
-        }
-
+        function updateGame() { if (gameState === "playing" && gameRunning && !paused) { updateWorld(); updatePlayer(); updateCollectibles(); updateHealthItems(); updateViruses(); } }
         function draw() {
-            if (gameState === "menu") {
-                drawMenu();
-            } else {
-                drawBackground();
-                drawGround();
-                drawCollectibles();
-                drawHealthItems();
-                drawViruses();
-                drawPlayer();
-                if (gameState === "playing") {
-                    ctx.font = 'bold 10px monospace';
-                    ctx.fillStyle = '#3b82f6';
-                    ctx.shadowBlur = 5;
-                    ctx.shadowColor = '#3b82f6';
-                    ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32);
-                    if (difficultyTier >= 2) {
-                        ctx.fillStyle = '#ff4444';
-                        ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55);
-                    } else if (difficultyTier >= 1) {
-                        ctx.fillStyle = '#ffaa44';
-                        ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55);
-                    }
-                    ctx.shadowBlur = 0;
-                }
-            }
+            if (gameState === "menu") drawMenu();
+            else if (gameState === "entrance") drawEntrance();
+            else { drawBackground(); drawGround(); drawCollectibles(); drawHealthItems(); drawViruses(); drawPlayer(); if (gameState === "playing") { ctx.font = 'bold 10px monospace'; ctx.fillStyle = '#3b82f6'; ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32); if (difficultyTier >= 2) { ctx.fillStyle = '#ff4444'; ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55); } else if (difficultyTier >= 1) { ctx.fillStyle = '#ffaa44'; ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55); } } }
         }
-
         function animate() { updateGame(); draw(); requestAnimationFrame(animate); }
 
         initGround();
         animate();
 
-        canvas.addEventListener('click', (e) => {
-            if (gameState !== "menu") return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            let mouseX = (e.clientX - rect.left) * scaleX;
-            let mouseY = (e.clientY - rect.top) * scaleY;
-            if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) {
-                startGame();
-            }
-        });
-        
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (gameState !== "menu") return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const touch = e.touches[0];
-            let touchX = (touch.clientX - rect.left) * scaleX;
-            let touchY = (touch.clientY - rect.top) * scaleY;
-            if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) {
-                startGame();
-            }
-        });
+        canvas.addEventListener('click', (e) => { if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; let mouseX = (e.clientX - rect.left) * scaleX; let mouseY = (e.clientY - rect.top) * scaleY; if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) startEntrance(); });
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const touch = e.touches[0]; let touchX = (touch.clientX - rect.left) * scaleX; let touchY = (touch.clientY - rect.top) * scaleY; if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) startEntrance(); });
 
-        document.getElementById('jumpBtn').addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            if (gameState === "playing" && !paused) jump(); 
-        });
-        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { 
-            e.preventDefault(); 
-            if (gameState === "playing" && !paused) jump(); 
-        });
-        document.getElementById('restartBtn').onclick = () => { restartGame(); };
-        document.getElementById('pauseBtn').onclick = () => { togglePause(); };
-        
-        document.getElementById('resumeBtn').onclick = () => { togglePause(); };
-        document.getElementById('pauseRestartBtn').onclick = () => { 
-            if (gameState === "playing") { 
-                restartGame(); 
-                paused = false; 
-                document.getElementById('pauseOverlay').style.display = 'none'; 
-            } 
-        };
-        document.getElementById('exitMenuBtn').onclick = () => { 
-            exitToMenu(); 
-            paused = false; 
-            document.getElementById('pauseOverlay').style.display = 'none'; 
-        };
-        document.getElementById('claimBtn').onclick = () => { 
-            alert('💰 CLAIM IFC: ' + score + ' IFC\n(Real wallet integration coming soon!)');
-        };
-        
-        window.onkeydown = (e) => { 
-            if (e.code === 'Space' || e.code === 'ArrowUp') { 
-                e.preventDefault(); 
-                if (gameState === "playing" && !paused) jump(); 
-            }
-            if (e.code === 'KeyP' && gameState === "playing") { togglePause(); }
-        };
+        document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
+        document.getElementById('jumpBtn').ontouchstart = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
+        document.getElementById('restartBtn').onclick = () => restartGame();
+        document.getElementById('pauseBtn').onclick = () => togglePause();
+        document.getElementById('resumeBtn').onclick = () => togglePause();
+        document.getElementById('pauseRestartBtn').onclick = () => { if (gameState === "playing") { restartGame(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; } };
+        document.getElementById('exitMenuBtn').onclick = () => { exitToMenu(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; };
+        document.getElementById('claimBtn').onclick = () => alert('💰 CLAIM IFC: ' + score + ' IFC\n(Real wallet integration coming soon!)');
+        window.onkeydown = (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } if (e.code === 'KeyP' && gameState === "playing") togglePause(); };
     })();
 </script>
 </body>
