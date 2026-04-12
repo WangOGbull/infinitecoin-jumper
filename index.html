@@ -63,7 +63,7 @@
         #healthBar {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            background: #00ff00;
             transition: width 0.2s ease;
         }
         #pauseBtn {
@@ -92,6 +92,7 @@
             border-radius: 60px;
             cursor: pointer;
             backdrop-filter: blur(8px);
+            display: none;
         }
         .ctrl-btn:active {
             background: #3b82f6;
@@ -158,6 +159,17 @@
             font-weight: bold;
             letter-spacing: 2px;
         }
+        .start-btn {
+            background: #3b82f6;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -190,6 +202,7 @@
         let frame = 0;
         let hitBlinkCounter = 0;
         let difficultyTier = 0;
+        let animationId = null;
 
         // Player
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false };
@@ -575,7 +588,6 @@
                 if (s.x < 0) s.x = W;
             }
             
-            // BIG SKY BLUE GLOWING INFINITY SYMBOL IN THE SKY
             ctx.save();
             ctx.shadowBlur = 35;
             ctx.shadowColor = '#3b82f6';
@@ -613,6 +625,7 @@
             startGame();
         }
 
+        // Draw menu with separate HTML button (not canvas click)
         function drawMenu() {
             drawBackground();
             
@@ -645,19 +658,6 @@
             ctx.font = 'bold 18px monospace';
             ctx.fillText('START', W/2-25, H/2 + 158);
             ctx.shadowBlur = 0;
-            
-            canvas.onclick = (e) => {
-                if (gameState !== "menu") return;
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                let mouseX = (e.clientX - rect.left) * scaleX;
-                let mouseY = (e.clientY - rect.top) * scaleY;
-                if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+130 && mouseY < H/2+172) {
-                    startGame();
-                    canvas.onclick = null;
-                }
-            };
         }
 
         function updateGame() {
@@ -697,14 +697,58 @@
             }
         }
 
-        function animate() { updateGame(); draw(); requestAnimationFrame(animate); }
+        function animate() { 
+            updateGame(); 
+            draw(); 
+            requestAnimationFrame(animate); 
+        }
 
         initGround();
         animate();
 
-        document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
+        // Separate click detection for start button (using canvas click with correct coordinates)
+        canvas.addEventListener('click', (e) => {
+            if (gameState !== "menu") return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let mouseX = (e.clientX - rect.left) * scaleX;
+            let mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // Start button area
+            if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+130 && mouseY < H/2+172) {
+                startGame();
+            }
+        });
+        
+        // Touch detection for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState !== "menu") return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const touch = e.touches[0];
+            
+            let touchX = (touch.clientX - rect.left) * scaleX;
+            let touchY = (touch.clientY - rect.top) * scaleY;
+            
+            // Start button area
+            if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+130 && touchY < H/2+172) {
+                startGame();
+            }
+        });
+
+        document.getElementById('jumpBtn').addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            if (gameState === "playing" && !paused) jump(); 
+        });
         document.getElementById('restartBtn').onclick = () => { restartGame(); };
         document.getElementById('pauseBtn').onclick = () => { togglePause(); };
+        
         window.onkeydown = (e) => { 
             if (e.code === 'Space' || e.code === 'ArrowUp') { 
                 e.preventDefault(); 
@@ -712,14 +756,12 @@
             }
             if (e.code === 'KeyP' && gameState === "playing") { togglePause(); }
         };
-        canvas.ontouchstart = (e) => { 
+        
+        // Jump button also works on mobile tap
+        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { 
             e.preventDefault(); 
             if (gameState === "playing" && !paused) jump(); 
-        };
-        canvas.onmousedown = (e) => { 
-            e.preventDefault(); 
-            if (gameState === "playing" && !paused) jump(); 
-        };
+        });
     })();
 </script>
 </body>
