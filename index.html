@@ -34,7 +34,6 @@
         .pause-buttons-row{display:flex;flex-direction:column;gap:12px;align-items:center}
         .sound-btn{background:rgba(0,0,0,0.6);border:1px solid #3b82f6;color:#3b82f6;padding:6px 12px;border-radius:40px;font-size:12px;cursor:pointer;margin-top:10px}
         .sound-btn:active{background:#3b82f6;color:#000}
-        .cooldown-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#3b82f6;font-size:24px;font-weight:bold;text-align:center;z-index:15;background:rgba(0,0,0,0.7);padding:10px 20px;border-radius:50px;white-space:nowrap;display:none}
     </style>
 </head>
 <body>
@@ -70,7 +69,6 @@
         </div>
     </div>
     <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | AVOID VIRUSES | DOUBLE JUMP</div>
-    <div id="cooldownText" class="cooldown-text"></div>
 </div>
 <script>
     (function(){
@@ -174,8 +172,8 @@
         let giftBoxSpawned = false;
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
         let virusSpawnEnabled = true;
-        let cooldownTimer = 0;
-        let cooldownActive = false;
+        let safeModeTimer = 0;
+        let safeModeActive = false;
         
         let giftBox = null;
         
@@ -190,27 +188,21 @@
             giftBoxSpawned = true;
         }
         
-        function startCooldown(seconds, message) {
-            cooldownActive = true;
+        function startSafeMode(seconds) {
+            safeModeActive = true;
             virusSpawnEnabled = false;
-            cooldownTimer = seconds;
-            const cooldownDiv = document.getElementById('cooldownText');
-            cooldownDiv.style.display = 'block';
-            cooldownDiv.innerText = message;
+            safeModeTimer = seconds;
             
             const interval = setInterval(() => {
-                if (!cooldownActive || gameState !== "playing") {
+                if (!safeModeActive || gameState !== "playing") {
                     clearInterval(interval);
                     return;
                 }
-                cooldownTimer--;
-                if (cooldownTimer <= 0) {
-                    cooldownActive = false;
+                safeModeTimer--;
+                if (safeModeTimer <= 0) {
+                    safeModeActive = false;
                     virusSpawnEnabled = true;
-                    cooldownDiv.style.display = 'none';
                     clearInterval(interval);
-                } else {
-                    cooldownDiv.innerText = message + ' ' + cooldownTimer + 's';
                 }
             }, 1000);
         }
@@ -360,7 +352,7 @@
             if (virusInterval) clearInterval(virusInterval);
             spawnInterval = setInterval(() => { if (gameRunning && !paused && collectibles.length < 8) spawnCollectible(); }, 1600);
             
-            startCooldown(5, '⚡ SAFE MODE ⚡');
+            startSafeMode(5);
             
             virusInterval = setInterval(() => { 
                 if (gameRunning && !paused && virusSpawnEnabled) {
@@ -396,11 +388,11 @@
                         difficultyTier = 2;
                         currentSpeed = 5.8;
                         player.baseJump = -11.0;
-                        if (!cooldownActive) startCooldown(5, '⚡ TIER 3 INCOMING ⚡');
+                        startSafeMode(5);
                     } else if (score >= 1000 && difficultyTier === 0) {
                         difficultyTier = 1;
                         currentSpeed = 3.8;
-                        if (!cooldownActive) startCooldown(5, '⚡ TIER 2 INCOMING ⚡');
+                        startSafeMode(5);
                     }
                     
                     if (difficultyTier === 2) {
@@ -862,11 +854,10 @@
             document.getElementById('jumpBtn').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
-            document.getElementById('cooldownText').style.display = 'none';
         }
 
         function restartGame() { startGame(); }
-        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('topText').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; document.getElementById('cooldownText').style.display = 'none'; }
+        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('topText').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score} IFC\n🔧 Smart contract deployment coming soon!`); }
 
         function drawMenu() {
@@ -990,8 +981,7 @@
             pauseBtn.ontouchstart = (e) => { e.preventDefault(); togglePause(); };
         }
         
-        document.getElementById('restartBtn').onclick = () => restartGame();
-        document.getElementById('resumeBtn').onclick = () => togglePause();
+        document.getElementById('resumeBtn').onclick = () => { togglePause(); };
         document.getElementById('pauseRestartBtn').onclick = () => { if (gameState === "playing") { restartGame(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; } };
         document.getElementById('exitMenuBtn').onclick = () => { exitToMenu(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; };
         document.getElementById('claimBtn').onclick = () => alert('🔧 SMART CONTRACT DEPLOYMENT SOON');
