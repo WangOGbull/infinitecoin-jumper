@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Infinitecoin Jumper - Final</title>
+    <title>Infinitecoin Jumper | Play to Earn IFC</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
         body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace;touch-action:manipulation}
         .game-container{position:relative;width:100%;max-width:480px;margin:0 auto}
         canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer;touch-action:manipulation}
-        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 14px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;display:none}
-        .top-text{position:absolute;top:15px;left:120px;right:120px;text-align:center;z-index:10;pointer-events:none;display:none}
-        .top-text .lavish{color:#f5a623;font-size:9px;font-weight:bold;letter-spacing:1px}
-        .top-text .momentum{color:#3b82f6;font-size:7px;margin-top:2px}
-        #healthBarContainer{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:120px;height:12px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
+        
+        /* Top bar - clean spacing */
+        #score{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:15px;z-index:10;border:1px solid #3b82f6;display:none}
+        .top-text{position:absolute;top:12px;left:100px;right:100px;text-align:center;z-index:10;pointer-events:none;display:none}
+        .top-text .lavish{color:#f5a623;font-size:8px;font-weight:bold;letter-spacing:1px}
+        .top-text .momentum{color:#3b82f6;font-size:6px;margin-top:1px}
+        #healthBarContainer{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:10px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
         #healthBar{width:100%;height:100%;background:#00ff00;transition:width 0.2s ease}
-        #pauseBtn{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:14px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
+        
+        /* Pause button - icon only */
+        #pauseBtn{position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 10px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
+        
         .ctrl-btn{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:rgba(59,130,246,0.3);border:3px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;touch-action:manipulation;font-size:32px;padding:10px 28px;border-radius:60px;width:auto;text-align:center;box-shadow:0 0 15px rgba(59,130,246,0.3)}
         .ctrl-btn:active{background:#3b82f6;color:#000;transform:translateX(-50%) scale(0.96)}
         #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
@@ -44,7 +49,7 @@
         <div class="momentum">INFINITE MOMENTUM</div>
     </div>
     <div id="healthBarContainer"><div id="healthBar"></div></div>
-    <div id="pauseBtn">⏸️ PAUSE</div>
+    <div id="pauseBtn">⏸️</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     <button class="ctrl-btn" id="jumpBtn">♾️</button>
     <div id="pauseOverlay">
@@ -207,19 +212,23 @@
             }, 1000);
         }
         
-        let lastPlayed = localStorage.getItem('lastPlayedDate') || 0;
         let dailyBonusAvailable = false;
         let dailyBonusClaimed = false;
         
         function checkDailyBonus() {
-            const today = new Date().toDateString();
-            const last = localStorage.getItem('lastPlayedDate');
-            if (last !== today) {
+            const lastClaim = localStorage.getItem('lastPlayedTimestamp');
+            if (!lastClaim) {
                 dailyBonusAvailable = true;
                 dailyBonusClaimed = false;
             } else {
-                dailyBonusAvailable = false;
-                dailyBonusClaimed = true;
+                const hoursSince = (Date.now() - parseInt(lastClaim)) / (1000 * 60 * 60);
+                if (hoursSince >= 24) {
+                    dailyBonusAvailable = true;
+                    dailyBonusClaimed = false;
+                } else {
+                    dailyBonusAvailable = false;
+                    dailyBonusClaimed = true;
+                }
             }
         }
         
@@ -230,9 +239,13 @@
             updateUI();
             dailyBonusAvailable = false;
             dailyBonusClaimed = true;
-            localStorage.setItem('lastPlayedDate', new Date().toDateString());
+            localStorage.setItem('lastPlayedTimestamp', Date.now());
             alert(`✦ DAILY BONUS CLAIMED! +${bonus} IFC ✦`);
             return true;
+        }
+
+        function connectWallet() {
+            alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
@@ -383,7 +396,6 @@
                     updateUI();
                     playSound('collect');
                     
-                    let oldTier = difficultyTier;
                     if (score >= 2000 && difficultyTier === 1) {
                         difficultyTier = 2;
                         currentSpeed = 5.8;
@@ -862,41 +874,61 @@
 
         function drawMenu() {
             drawBackground();
-            ctx.font = 'bold 32px monospace';
+            
+            // Title
+            ctx.font = 'bold 28px monospace';
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 10;
-            ctx.fillText('INFINITE JUMPER', W/2-130, H/4);
-            ctx.font = '14px monospace';
+            ctx.fillText('INFINITE JUMPER', W/2-115, H/4 - 10);
+            
+            // Centered professional text
+            ctx.font = '11px monospace';
             ctx.fillStyle = '#cbd5e1';
-            ctx.fillText('Collect Infinity Coins | Avoid Viruses', W/2-125, H/4 + 35);
+            ctx.fillText('COLLECT INFINITY COINS | AVOID VIRUSES', W/2-135, H/4 + 20);
             ctx.fillStyle = '#94a3b8';
-            ctx.font = '12px monospace';
-            ctx.fillText('Double Jump | Survive | Earn IFC', W/2-105, H/4 + 55);
+            ctx.font = '10px monospace';
+            ctx.fillText('DOUBLE JUMP | SURVIVE | EARN IFC', W/2-105, H/4 + 38);
+            
+            // Menu box
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 0;
-            ctx.fillRect(W/2-100, H/2 - 30, 200, 130);
+            ctx.fillRect(W/2-100, H/2 - 40, 200, 170);
             ctx.strokeStyle = '#3b82f6';
             ctx.lineWidth = 1;
-            ctx.strokeRect(W/2-100, H/2 - 30, 200, 130);
+            ctx.strokeRect(W/2-100, H/2 - 40, 200, 170);
+            
+            // Daily Bonus button
             ctx.fillStyle = dailyBonusAvailable ? '#f5a623' : '#3b82f6';
-            ctx.fillRect(W/2-80, H/2 - 15, 160, 32);
+            ctx.fillRect(W/2-80, H/2 - 25, 160, 30);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 14px monospace';
-            ctx.fillText(dailyBonusAvailable ? '🎁 DAILY BONUS' : '✓ BONUS CLAIMED', W/2-65, H/2 + 8);
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText(dailyBonusAvailable ? '🎁 DAILY BONUS' : '✓ BONUS CLAIMED', W/2-60, H/2 - 5);
+            
+            // Start Game button
             ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(W/2-80, H/2 + 30, 160, 38);
+            ctx.fillRect(W/2-80, H/2 + 15, 160, 32);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 16px monospace';
-            ctx.fillText('▶ START GAME', W/2-55, H/2 + 55);
+            ctx.font = 'bold 13px monospace';
+            ctx.fillText('▶ START GAME', W/2-55, H/2 + 36);
+            
+            // Connect Wallet button
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(W/2-80, H/2 + 57, 160, 28);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 11px monospace';
+            ctx.fillText('🔗 CONNECT WALLET', W/2-65, H/2 + 76);
+            
+            // Sound button
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(W/2-50, H/2 + 85, 100, 28);
+            ctx.fillRect(W/2-50, H/2 + 95, 100, 24);
             ctx.fillStyle = '#3b82f6';
-            ctx.font = '12px monospace';
-            ctx.fillText(soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF', W/2-40, H/2 + 105);
+            ctx.font = '10px monospace';
+            ctx.fillText(soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF', W/2-40, H/2 + 112);
+            
             if (dailyBonusAvailable) {
                 ctx.fillStyle = '#f5a623';
-                ctx.font = 'bold 10px monospace';
-                ctx.fillText('✦ BONUS READY ✦', W/2-45, H/2 - 20);
+                ctx.font = 'bold 9px monospace';
+                ctx.fillText('✦ BONUS READY ✦', W/2-42, H/2 - 32);
             }
         }
 
@@ -937,12 +969,14 @@
             const scaleY = canvas.height / rect.height; 
             let mouseX = (e.clientX - rect.left) * scaleX; 
             let mouseY = (e.clientY - rect.top) * scaleY; 
-            if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2-15 && mouseY < H/2+17 && dailyBonusAvailable) { 
+            if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2-25 && mouseY < H/2+5 && dailyBonusAvailable) { 
                 claimDailyBonus(); 
                 drawMenu();
-            } else if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2+30 && mouseY < H/2+68) { 
+            } else if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2+15 && mouseY < H/2+47) { 
                 startGame(); 
-            } else if (mouseX > W/2-50 && mouseX < W/2+50 && mouseY > H/2+85 && mouseY < H/2+113) { 
+            } else if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2+57 && mouseY < H/2+85) { 
+                connectWallet();
+            } else if (mouseX > W/2-50 && mouseX < W/2+50 && mouseY > H/2+95 && mouseY < H/2+119) { 
                 toggleSound(); 
                 drawMenu();
             } 
@@ -957,12 +991,14 @@
             const touch = e.touches[0]; 
             let touchX = (touch.clientX - rect.left) * scaleX; 
             let touchY = (touch.clientY - rect.top) * scaleY; 
-            if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2-15 && touchY < H/2+17 && dailyBonusAvailable) { 
+            if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2-25 && touchY < H/2+5 && dailyBonusAvailable) { 
                 claimDailyBonus(); 
                 drawMenu();
-            } else if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2+30 && touchY < H/2+68) { 
+            } else if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2+15 && touchY < H/2+47) { 
                 startGame(); 
-            } else if (touchX > W/2-50 && touchX < W/2+50 && touchY > H/2+85 && touchY < H/2+113) { 
+            } else if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2+57 && touchY < H/2+85) { 
+                connectWallet();
+            } else if (touchX > W/2-50 && touchX < W/2+50 && touchY > H/2+95 && touchY < H/2+119) { 
                 toggleSound(); 
                 drawMenu();
             } 
