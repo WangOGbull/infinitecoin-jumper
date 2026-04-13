@@ -13,8 +13,9 @@
         #healthBarContainer{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:120px;height:12px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
         #healthBar{width:100%;height:100%;background:#00ff00;transition:width 0.2s ease}
         #pauseBtn{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:14px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
-        .ctrl-btn{position:absolute;bottom:20px;right:20px;background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;touch-action:manipulation;font-size:22px;padding:12px 24px;border-radius:60px}
-        .ctrl-btn:active{background:#3b82f6;color:#000;transform:scale(0.96)}
+        /* Jump button - centered under ground */
+        .ctrl-btn{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);border:3px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;touch-action:manipulation;font-size:28px;padding:12px 32px;border-radius:60px;width:auto;text-align:center;box-shadow:0 0 15px rgba(59,130,246,0.5)}
+        .ctrl-btn:active{background:#3b82f6;color:#000;transform:translateX(-50%) scale(0.96)}
         #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
         #gameOver h2{color:#3b82f6;margin-bottom:15px}
         #gameOver p{color:white;font-size:22px;margin-bottom:20px}
@@ -27,6 +28,8 @@
         .pause-btn-custom{background:rgba(59,130,246,0.2);border:2px solid #3b82f6;color:#3b82f6;padding:10px 30px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;margin:5px;min-width:160px;text-align:center}
         .pause-btn-custom:active{background:#3b82f6;color:#000;transform:scale(0.96)}
         .pause-buttons-row{display:flex;flex-direction:column;gap:12px;align-items:center}
+        .sound-btn{background:rgba(0,0,0,0.6);border:1px solid #3b82f6;color:#3b82f6;padding:6px 12px;border-radius:40px;font-size:12px;cursor:pointer;margin-top:10px}
+        .sound-btn:active{background:#3b82f6;color:#000}
     </style>
 </head>
 <body>
@@ -45,6 +48,7 @@
             <div class="pause-btn-custom" id="resumeBtn">▶️ RESUME</div>
             <div class="pause-btn-custom" id="pauseRestartBtn">🔄 RESTART</div>
             <div class="pause-btn-custom" id="exitMenuBtn">🏠 EXIT TO MENU</div>
+            <div class="sound-btn" id="pauseSoundToggle">🔊 SOUND ON</div>
         </div>
     </div>
     <div id="gameOver"><h2>✦ GAME OVER ✦</h2><p>♾️ IFC: <span id="finalScore">0</span></p><button id="restartBtn">RESTART</button></div>
@@ -57,6 +61,70 @@
         const W = 400, H = 600;
         canvas.width = W;
         canvas.height = H;
+
+        // Sound system
+        let soundEnabled = true;
+        let audioContext = null;
+        
+        function initAudio() {
+            if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playSound(type) {
+            if (!soundEnabled || !audioContext) return;
+            try {
+                const now = audioContext.currentTime;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'sine';
+                gain.gain.value = 0.15;
+                
+                if (type === 'jump') {
+                    osc.frequency.value = 523.25;
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.3);
+                    osc.start();
+                    osc.stop(now + 0.3);
+                } else if (type === 'collect') {
+                    osc.frequency.value = 880;
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.2);
+                    osc.start();
+                    osc.stop(now + 0.2);
+                    setTimeout(() => {
+                        const osc2 = audioContext.createOscillator();
+                        const gain2 = audioContext.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(audioContext.destination);
+                        osc2.frequency.value = 1046.5;
+                        gain2.gain.value = 0.1;
+                        gain2.gain.exponentialRampToValueAtTime(0.00001, now + 0.2);
+                        osc2.start();
+                        osc2.stop(now + 0.2);
+                    }, 50);
+                } else if (type === 'hit') {
+                    osc.frequency.value = 130.81;
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.4);
+                    osc.start();
+                    osc.stop(now + 0.4);
+                } else if (type === 'gameover') {
+                    osc.frequency.value = 98;
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 1);
+                    osc.start();
+                    osc.stop(now + 1);
+                }
+            } catch(e) { console.log('Audio error'); }
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('pauseSoundToggle').innerText = soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF';
+            if (soundEnabled && audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
 
         let gameState = "menu";
         let gameRunning = false;
@@ -95,7 +163,7 @@
             dailyBonusAvailable = false;
             dailyBonusClaimed = true;
             localStorage.setItem('lastPlayedDate', new Date().toDateString());
-            alert(`🎁 DAILY BONUS: +${bonus} IFC!`);
+            alert(`✦ DAILY BONUS CLAIMED! +${bonus} IFC ✦`);
             return true;
         }
 
@@ -171,6 +239,8 @@
         }
 
         function startGame() {
+            initAudio();
+            if (audioContext && audioContext.state === 'suspended') audioContext.resume();
             gameState = "playing";
             gameRunning = true;
             paused = false;
@@ -235,6 +305,7 @@
                     c.collected = true;
                     score += c.value;
                     updateUI();
+                    playSound('collect');
                     
                     if (score >= 2000 && difficultyTier === 1) {
                         difficultyTier = 2;
@@ -283,6 +354,7 @@
                     health = Math.max(0, health - 10);
                     updateUI();
                     hitBlinkCounter = 14;
+                    playSound('hit');
                     if (health <= 0) gameOver();
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
@@ -296,6 +368,7 @@
                     health = Math.max(0, health - 30);
                     updateUI();
                     hitBlinkCounter = 14;
+                    playSound('hit');
                     if (health <= 0) gameOver();
                 }
                 if (v.x + v.width < 0) { blackViruses.splice(i, 1); i--; }
@@ -326,9 +399,11 @@
             if (player.grounded) { 
                 player.vy = player.baseJump; 
                 player.grounded = false; 
+                playSound('jump');
             } else if (!player.doubleJumpUsed) { 
                 player.vy = player.baseJump + 0.8; 
                 player.doubleJumpUsed = true; 
+                playSound('jump');
             }
         }
 
@@ -533,24 +608,40 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true);
         }
 
-        // PLANETS - Large, beautiful space objects
-        let planets = [
-            { x: 50, y: 80, size: 45, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', speed: 0.03, offset: 0 },
-            { x: 320, y: 180, size: 55, color1: '#3b82f6', color2: '#1e40af', ring: false, speed: 0.02, offset: 0 },
-            { x: 80, y: 350, size: 38, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', speed: 0.04, offset: 0 },
-            { x: 300, y: 420, size: 48, color1: '#ec4899', color2: '#be185d', ring: false, speed: 0.025, offset: 0 },
-            { x: 150, y: 520, size: 42, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', speed: 0.035, offset: 0 }
+        // PLANETS - One at a time, huge, slower speed
+        let planetsQueue = [
+            { x: -150, y: 120, size: 80, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true },
+            { x: -150, y: 280, size: 95, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false },
+            { x: -150, y: 400, size: 70, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', active: false },
+            { x: -150, y: 500, size: 85, color1: '#ec4899', color2: '#be185d', ring: false, active: false },
+            { x: -150, y: 180, size: 75, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', active: false }
         ];
+        let currentPlanetIndex = 0;
+        let planetSpeed = 1.2;
+        
+        function updatePlanets() {
+            let activePlanet = planetsQueue[currentPlanetIndex];
+            if (activePlanet) {
+                activePlanet.x += planetSpeed;
+                if (activePlanet.x > W + 200) {
+                    activePlanet.active = false;
+                    activePlanet.x = -150;
+                    currentPlanetIndex = (currentPlanetIndex + 1) % planetsQueue.length;
+                    planetsQueue[currentPlanetIndex].active = true;
+                    planetsQueue[currentPlanetIndex].x = -150;
+                }
+            }
+        }
         
         function drawPlanets() {
-            for (let p of planets) {
+            for (let p of planetsQueue) {
+                if (!p.active) continue;
                 ctx.save();
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = 25;
                 ctx.shadowColor = p.color1;
-                ctx.globalAlpha = 0.7;
+                ctx.globalAlpha = 0.75;
                 
-                // Planet body
-                let grad = ctx.createLinearGradient(p.x - 10, p.y - 10, p.x + 10, p.y + 10);
+                let grad = ctx.createLinearGradient(p.x - 20, p.y - 20, p.x + 20, p.y + 20);
                 grad.addColorStop(0, p.color1);
                 grad.addColorStop(1, p.color2);
                 ctx.fillStyle = grad;
@@ -558,41 +649,33 @@
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Rings if present
                 if (p.ring) {
                     ctx.globalAlpha = 0.5;
                     ctx.fillStyle = p.ringColor;
                     ctx.beginPath();
-                    ctx.ellipse(p.x, p.y, p.size + 12, p.size * 0.3, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.ellipse(p.x, p.y, p.size + 18, p.size * 0.25, Math.PI / 4, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.globalAlpha = 0.3;
                     ctx.beginPath();
-                    ctx.ellipse(p.x, p.y, p.size + 18, p.size * 0.35, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.ellipse(p.x, p.y, p.size + 28, p.size * 0.3, Math.PI / 4, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 
-                // Craters (for rocky planets)
                 if (!p.ring) {
-                    ctx.globalAlpha = 0.3;
+                    ctx.globalAlpha = 0.4;
                     ctx.fillStyle = '#000000';
                     ctx.beginPath();
-                    ctx.arc(p.x - 12, p.y - 8, p.size * 0.15, 0, Math.PI * 2);
+                    ctx.arc(p.x - 18, p.y - 12, p.size * 0.12, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.beginPath();
-                    ctx.arc(p.x + 10, p.y + 5, p.size * 0.1, 0, Math.PI * 2);
+                    ctx.arc(p.x + 15, p.y + 10, p.size * 0.1, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.beginPath();
-                    ctx.arc(p.x - 5, p.y + 12, p.size * 0.12, 0, Math.PI * 2);
+                    ctx.arc(p.x - 8, p.y + 18, p.size * 0.08, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 
                 ctx.restore();
-                
-                // Move planets slowly
-                p.offset += p.speed;
-                p.x += Math.sin(p.offset) * 0.3;
-                if (p.x > W + 100) p.x = -100;
-                if (p.x < -100) p.x = W + 100;
             }
         }
 
@@ -609,7 +692,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, W, H);
             
-            // Stars
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
@@ -617,7 +699,6 @@
                 if (s.x < 0) s.x = W;
             }
             
-            // Draw planets behind everything
             drawPlanets();
             
             ctx.save();
@@ -642,6 +723,7 @@
             if (!gameRunning) return;
             gameRunning = false;
             gameState = "gameOver";
+            playSound('gameover');
             document.getElementById('finalScore').innerText = score;
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('score').style.display = 'none';
@@ -657,42 +739,91 @@
 
         function drawMenu() {
             drawBackground();
-            ctx.font = 'bold 28px monospace';
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillText('INFINITE JUMPER', W/2-120, H/3 - 20);
-            ctx.font = '16px monospace';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText('Jump to catch and earn', W/2-105, H/3 + 30);
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillText('INFINITECOIN (IFC)', W/2-85, H/3 + 55);
             
-            // Daily bonus button on menu
+            // Professional menu layout
+            ctx.font = 'bold 32px monospace';
             ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(W/2-60, H/2 + 50, 120, 36);
+            ctx.shadowBlur = 10;
+            ctx.fillText('INFINITE JUMPER', W/2-130, H/4);
+            
+            ctx.font = '14px monospace';
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText('Collect Infinity Coins | Avoid Viruses', W/2-125, H/4 + 35);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px monospace';
+            ctx.fillText('Double Jump | Survive | Earn IFC', W/2-105, H/4 + 55);
+            
+            // Menu box
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(W/2-100, H/2 - 30, 200, 130);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(W/2-100, H/2 - 30, 200, 130);
+            
+            // Daily bonus button inside box
+            ctx.fillStyle = dailyBonusAvailable ? '#f5a623' : '#3b82f6';
+            ctx.fillRect(W/2-80, H/2 - 15, 160, 32);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 14px monospace';
-            ctx.fillText('🎁 DAILY BONUS', W/2-50, H/2 + 74);
+            ctx.fillText(dailyBonusAvailable ? '🎁 DAILY BONUS' : '✓ BONUS CLAIMED', W/2-65, H/2 + 8);
             
+            // Start button
             ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(W/2-60, H/2 + 100, 120, 42);
+            ctx.fillRect(W/2-80, H/2 + 30, 160, 38);
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 18px monospace';
-            ctx.fillText('START', W/2-25, H/2 + 128);
+            ctx.font = 'bold 16px monospace';
+            ctx.fillText('▶ START GAME', W/2-55, H/2 + 55);
             
-            // Check daily bonus availability
-            checkDailyBonus();
-            if (dailyBonusAvailable && !dailyBonusClaimed) {
-                ctx.fillStyle = '#ffaa44';
+            // Sound toggle button on menu
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(W/2-50, H/2 + 85, 100, 28);
+            ctx.fillStyle = '#3b82f6';
+            ctx.font = '12px monospace';
+            ctx.fillText(soundEnabled ? '🔊 SOUND ON' : '🔇 SOUND OFF', W/2-40, H/2 + 105);
+            
+            if (dailyBonusAvailable) {
+                ctx.fillStyle = '#f5a623';
                 ctx.font = 'bold 10px monospace';
-                ctx.fillText('🎁 BONUS AVAILABLE!', W/2-60, H/2 + 45);
+                ctx.fillText('✦ BONUS READY ✦', W/2-45, H/2 - 20);
             }
         }
 
-        function updateGame() { if (gameState === "playing" && gameRunning && !paused) { updateWorld(); updatePlayer(); updateCollectibles(); updateHealthItems(); updateViruses(); } }
+        function updateGame() { 
+            if (gameState === "playing" && gameRunning && !paused) { 
+                updateWorld(); 
+                updatePlayer(); 
+                updateCollectibles(); 
+                updateHealthItems(); 
+                updateViruses(); 
+                updatePlanets();
+            } 
+        }
+        
         function draw() {
             if (gameState === "menu") drawMenu();
-            else { drawBackground(); drawGround(); drawCollectibles(); drawHealthItems(); drawViruses(); drawPlayer(); if (gameState === "playing") { ctx.font = 'bold 10px monospace'; ctx.fillStyle = '#3b82f6'; ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32); if (difficultyTier >= 2) { ctx.fillStyle = '#ff4444'; ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55); } else if (difficultyTier >= 1) { ctx.fillStyle = '#ffaa44'; ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55); } } }
+            else { 
+                drawBackground(); 
+                drawGround(); 
+                drawCollectibles(); 
+                drawHealthItems(); 
+                drawViruses(); 
+                drawPlayer(); 
+                if (gameState === "playing") { 
+                    ctx.font = 'bold 10px monospace'; 
+                    ctx.fillStyle = '#3b82f6'; 
+                    ctx.fillText('✦ COLLECT INFINITY COINS ✦', W/2-105, 32); 
+                    if (difficultyTier >= 2) { 
+                        ctx.fillStyle = '#ff4444'; 
+                        ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55); 
+                    } else if (difficultyTier >= 1) { 
+                        ctx.fillStyle = '#ffaa44'; 
+                        ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55); 
+                    } 
+                } 
+            } 
         }
+        
         function animate() { updateGame(); draw(); requestAnimationFrame(animate); }
 
         initGround();
@@ -705,10 +836,13 @@
             const scaleY = canvas.height / rect.height; 
             let mouseX = (e.clientX - rect.left) * scaleX; 
             let mouseY = (e.clientY - rect.top) * scaleY; 
-            if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+50 && mouseY < H/2+86) { 
+            if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2-15 && mouseY < H/2+17 && dailyBonusAvailable) { 
                 claimDailyBonus(); 
-            } else if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) { 
+            } else if (mouseX > W/2-80 && mouseX < W/2+80 && mouseY > H/2+30 && mouseY < H/2+68) { 
                 startGame(); 
+            } else if (mouseX > W/2-50 && mouseX < W/2+50 && mouseY > H/2+85 && mouseY < H/2+113) { 
+                toggleSound(); 
+                drawMenu();
             } 
         });
         
@@ -721,10 +855,13 @@
             const touch = e.touches[0]; 
             let touchX = (touch.clientX - rect.left) * scaleX; 
             let touchY = (touch.clientY - rect.top) * scaleY; 
-            if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+50 && touchY < H/2+86) { 
+            if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2-15 && touchY < H/2+17 && dailyBonusAvailable) { 
                 claimDailyBonus(); 
-            } else if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) { 
+            } else if (touchX > W/2-80 && touchX < W/2+80 && touchY > H/2+30 && touchY < H/2+68) { 
                 startGame(); 
+            } else if (touchX > W/2-50 && touchX < W/2+50 && touchY > H/2+85 && touchY < H/2+113) { 
+                toggleSound(); 
+                drawMenu();
             } 
         });
 
@@ -736,7 +873,15 @@
         document.getElementById('pauseRestartBtn').onclick = () => { if (gameState === "playing") { restartGame(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; } };
         document.getElementById('exitMenuBtn').onclick = () => { exitToMenu(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; };
         document.getElementById('claimBtn').onclick = () => alert('🔧 SMART CONTRACT DEPLOYMENT SOON');
-        window.onkeydown = (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } if (e.code === 'KeyP' && gameState === "playing") togglePause(); };
+        document.getElementById('pauseSoundToggle').onclick = () => { toggleSound(); };
+        
+        window.onkeydown = (e) => { 
+            if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } 
+            if (e.code === 'KeyP' && gameState === "playing") togglePause(); 
+            if (e.code === 'KeyM') { toggleSound(); drawMenu(); }
+        };
+        
+        checkDailyBonus();
     })();
 </script>
 </body>
