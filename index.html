@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Infinitecoin Jumper - Pixel Ninja Hero</title>
+    <title>Infinitecoin Jumper - Space Edition</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
         body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace;touch-action:manipulation}
@@ -41,7 +41,7 @@
         <div class="pause-stats">💰 CURRENT IFC: <span id="pauseCurrentScore">0</span></div>
         <div class="pause-stats">🏆 HIGH SCORE: <span id="pauseHighScore">0</span></div>
         <div class="pause-buttons-row">
-            <div class="pause-btn-custom" id="claimBtn">💎 CLAIM IFC (DEMO)</div>
+            <div class="pause-btn-custom" id="claimBtn">🔧 SMART CONTRACT DEPLOYMENT SOON</div>
             <div class="pause-btn-custom" id="resumeBtn">▶️ RESUME</div>
             <div class="pause-btn-custom" id="pauseRestartBtn">🔄 RESTART</div>
             <div class="pause-btn-custom" id="exitMenuBtn">🏠 EXIT TO MENU</div>
@@ -69,7 +69,35 @@
         let difficultyTier = 0;
         let virusCount = 0;
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
-        let frameCounter = 0;
+        
+        // Daily bonus
+        let lastPlayed = localStorage.getItem('lastPlayedDate') || 0;
+        let dailyBonusAvailable = false;
+        let dailyBonusClaimed = false;
+        
+        function checkDailyBonus() {
+            const today = new Date().toDateString();
+            const last = localStorage.getItem('lastPlayedDate');
+            if (last !== today) {
+                dailyBonusAvailable = true;
+                dailyBonusClaimed = false;
+            } else {
+                dailyBonusAvailable = false;
+                dailyBonusClaimed = true;
+            }
+        }
+        
+        function claimDailyBonus() {
+            if (!dailyBonusAvailable) return false;
+            const bonus = 500;
+            score += bonus;
+            updateUI();
+            dailyBonusAvailable = false;
+            dailyBonusClaimed = true;
+            localStorage.setItem('lastPlayedDate', new Date().toDateString());
+            alert(`🎁 DAILY BONUS: +${bonus} IFC!`);
+            return true;
+        }
 
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
@@ -325,85 +353,6 @@
             }
         }
 
-        // PIXEL NINJA HERO CHARACTER
-        function drawPlayer() {
-            let x = player.x, y = player.y;
-            let runCycle = Math.floor(Date.now() * 0.015) % 4;
-            let isRunning = !player.grounded && player.vy !== 0 ? false : (player.grounded && (Math.abs(player.vy) < 0.1));
-            let legOffset = isRunning ? (Math.sin(Date.now() * 0.015) * 4) : 2;
-            let armSwing = isRunning ? (Math.sin(Date.now() * 0.018) * 5) : 0;
-            let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
-            
-            ctx.save();
-            if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
-            
-            // Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
-            ctx.fill();
-            
-            // Legs (ninja pants)
-            ctx.fillStyle = '#1a3a5a';
-            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
-            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
-            
-            // Shoes
-            ctx.fillStyle = '#0a2a3a';
-            ctx.fillRect(x+3, y+38, 9, 5);
-            ctx.fillRect(x+18, y+38, 9, 5);
-            
-            // Body (ninja suit)
-            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
-            gradBody.addColorStop(0, '#3b82f6');
-            gradBody.addColorStop(1, '#1a4a8a');
-            ctx.fillStyle = gradBody;
-            ctx.fillRect(x+5, y+12, 20, 22);
-            
-            // Infinity symbol on chest
-            drawInfinity(x+15, y+22, 7, null, true, '#3b82f6', '#3b82f6');
-            
-            // Arms (ninja arms)
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(x-4 + armSwing, y+16, 7, 8);
-            ctx.fillRect(x+27 - armSwing, y+16, 7, 8);
-            
-            // Hands (shuriken style)
-            ctx.fillStyle = '#1a3a5a';
-            ctx.fillRect(x-5 + armSwing, y+22, 4, 4);
-            ctx.fillRect(x+31 - armSwing, y+22, 4, 4);
-            
-            // Head (ninja mask)
-            ctx.fillStyle = '#2a5a8a';
-            ctx.fillRect(x+6, y+2, 18, 14);
-            
-            // Ninja mask eye slit
-            ctx.fillStyle = '#0a1a2a';
-            ctx.fillRect(x+8, y+7, 6, 3);
-            ctx.fillRect(x+16, y+7, 6, 3);
-            
-            // Glowing eyes
-            ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = '#3b82f6';
-            ctx.fillRect(x+9, y+8, 4, 2);
-            ctx.fillRect(x+17, y+8, 4, 2);
-            
-            // Ninja headband
-            ctx.fillStyle = '#f5a623';
-            ctx.fillRect(x+4, y+4, 22, 3);
-            
-            // Cape (hero cape)
-            ctx.fillStyle = '#1a3a5a';
-            ctx.beginPath();
-            ctx.moveTo(x+22, y+14);
-            ctx.lineTo(x+28, y+28);
-            ctx.lineTo(x+22, y+26);
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
         function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
@@ -489,6 +438,72 @@
             ctx.restore();
         }
 
+        function drawPlayer() {
+            let x = player.x, y = player.y;
+            let runCycle = Math.floor(Date.now() * 0.015) % 4;
+            let isRunning = !player.grounded && player.vy !== 0 ? false : (player.grounded && (Math.abs(player.vy) < 0.1));
+            let legOffset = isRunning ? (Math.sin(Date.now() * 0.015) * 4) : 2;
+            let armSwing = isRunning ? (Math.sin(Date.now() * 0.018) * 5) : 0;
+            let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
+            
+            ctx.save();
+            if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
+            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
+            
+            ctx.fillStyle = '#0a2a3a';
+            ctx.fillRect(x+3, y+38, 9, 5);
+            ctx.fillRect(x+18, y+38, 9, 5);
+            
+            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
+            gradBody.addColorStop(0, '#3b82f6');
+            gradBody.addColorStop(1, '#1a4a8a');
+            ctx.fillStyle = gradBody;
+            ctx.fillRect(x+5, y+12, 20, 22);
+            
+            drawInfinity(x+15, y+22, 7, null, true, '#3b82f6', '#3b82f6');
+            
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(x-4 + armSwing, y+16, 7, 8);
+            ctx.fillRect(x+27 - armSwing, y+16, 7, 8);
+            
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(x-5 + armSwing, y+22, 4, 4);
+            ctx.fillRect(x+31 - armSwing, y+22, 4, 4);
+            
+            ctx.fillStyle = '#2a5a8a';
+            ctx.fillRect(x+6, y+2, 18, 14);
+            
+            ctx.fillStyle = '#0a1a2a';
+            ctx.fillRect(x+8, y+7, 6, 3);
+            ctx.fillRect(x+16, y+7, 6, 3);
+            
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#3b82f6';
+            ctx.fillRect(x+9, y+8, 4, 2);
+            ctx.fillRect(x+17, y+8, 4, 2);
+            
+            ctx.fillStyle = '#f5a623';
+            ctx.fillRect(x+4, y+4, 22, 3);
+            
+            ctx.fillStyle = '#1a3a5a';
+            ctx.beginPath();
+            ctx.moveTo(x+22, y+14);
+            ctx.lineTo(x+28, y+28);
+            ctx.lineTo(x+22, y+26);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
         function drawGround() {
             for (let seg of groundSegments) {
                 let drawX = seg.x - worldOffset;
@@ -518,6 +533,69 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true);
         }
 
+        // PLANETS - Large, beautiful space objects
+        let planets = [
+            { x: 50, y: 80, size: 45, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', speed: 0.03, offset: 0 },
+            { x: 320, y: 180, size: 55, color1: '#3b82f6', color2: '#1e40af', ring: false, speed: 0.02, offset: 0 },
+            { x: 80, y: 350, size: 38, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', speed: 0.04, offset: 0 },
+            { x: 300, y: 420, size: 48, color1: '#ec4899', color2: '#be185d', ring: false, speed: 0.025, offset: 0 },
+            { x: 150, y: 520, size: 42, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', speed: 0.035, offset: 0 }
+        ];
+        
+        function drawPlanets() {
+            for (let p of planets) {
+                ctx.save();
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = p.color1;
+                ctx.globalAlpha = 0.7;
+                
+                // Planet body
+                let grad = ctx.createLinearGradient(p.x - 10, p.y - 10, p.x + 10, p.y + 10);
+                grad.addColorStop(0, p.color1);
+                grad.addColorStop(1, p.color2);
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Rings if present
+                if (p.ring) {
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillStyle = p.ringColor;
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, p.y, p.size + 12, p.size * 0.3, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 0.3;
+                    ctx.beginPath();
+                    ctx.ellipse(p.x, p.y, p.size + 18, p.size * 0.35, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Craters (for rocky planets)
+                if (!p.ring) {
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(p.x - 12, p.y - 8, p.size * 0.15, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(p.x + 10, p.y + 5, p.size * 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(p.x - 5, p.y + 12, p.size * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+                
+                // Move planets slowly
+                p.offset += p.speed;
+                p.x += Math.sin(p.offset) * 0.3;
+                if (p.x > W + 100) p.x = -100;
+                if (p.x < -100) p.x = W + 100;
+            }
+        }
+
         let stars = [];
         for (let i = 0; i < 150; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
         let bgInfinity = [];
@@ -530,18 +608,25 @@
             grad.addColorStop(1, '#1a1a3a');
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, W, H);
+            
+            // Stars
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
                 s.x -= 0.1;
                 if (s.x < 0) s.x = W;
             }
+            
+            // Draw planets behind everything
+            drawPlanets();
+            
             ctx.save();
             ctx.shadowBlur = 35;
             ctx.shadowColor = '#3b82f6';
             ctx.globalAlpha = 0.85;
             drawInfinity(W/2, H/3.2, 65, null, true, '#3b82f6', '#3b82f6');
             ctx.restore();
+            
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.15;
@@ -580,11 +665,27 @@
             ctx.fillText('Jump to catch and earn', W/2-105, H/3 + 30);
             ctx.fillStyle = '#3b82f6';
             ctx.fillText('INFINITECOIN (IFC)', W/2-85, H/3 + 55);
+            
+            // Daily bonus button on menu
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(W/2-60, H/2 + 50, 120, 36);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText('🎁 DAILY BONUS', W/2-50, H/2 + 74);
+            
             ctx.fillStyle = '#3b82f6';
             ctx.fillRect(W/2-60, H/2 + 100, 120, 42);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 18px monospace';
             ctx.fillText('START', W/2-25, H/2 + 128);
+            
+            // Check daily bonus availability
+            checkDailyBonus();
+            if (dailyBonusAvailable && !dailyBonusClaimed) {
+                ctx.fillStyle = '#ffaa44';
+                ctx.font = 'bold 10px monospace';
+                ctx.fillText('🎁 BONUS AVAILABLE!', W/2-60, H/2 + 45);
+            }
         }
 
         function updateGame() { if (gameState === "playing" && gameRunning && !paused) { updateWorld(); updatePlayer(); updateCollectibles(); updateHealthItems(); updateViruses(); } }
@@ -597,8 +698,35 @@
         initGround();
         animate();
 
-        canvas.addEventListener('click', (e) => { if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; let mouseX = (e.clientX - rect.left) * scaleX; let mouseY = (e.clientY - rect.top) * scaleY; if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) startGame(); });
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const touch = e.touches[0]; let touchX = (touch.clientX - rect.left) * scaleX; let touchY = (touch.clientY - rect.top) * scaleY; if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) startGame(); });
+        canvas.addEventListener('click', (e) => { 
+            if (gameState !== "menu") return; 
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width; 
+            const scaleY = canvas.height / rect.height; 
+            let mouseX = (e.clientX - rect.left) * scaleX; 
+            let mouseY = (e.clientY - rect.top) * scaleY; 
+            if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+50 && mouseY < H/2+86) { 
+                claimDailyBonus(); 
+            } else if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) { 
+                startGame(); 
+            } 
+        });
+        
+        canvas.addEventListener('touchstart', (e) => { 
+            e.preventDefault(); 
+            if (gameState !== "menu") return; 
+            const rect = canvas.getBoundingClientRect(); 
+            const scaleX = canvas.width / rect.width; 
+            const scaleY = canvas.height / rect.height; 
+            const touch = e.touches[0]; 
+            let touchX = (touch.clientX - rect.left) * scaleX; 
+            let touchY = (touch.clientY - rect.top) * scaleY; 
+            if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+50 && touchY < H/2+86) { 
+                claimDailyBonus(); 
+            } else if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) { 
+                startGame(); 
+            } 
+        });
 
         document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
         document.getElementById('jumpBtn').ontouchstart = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
@@ -607,7 +735,7 @@
         document.getElementById('resumeBtn').onclick = () => togglePause();
         document.getElementById('pauseRestartBtn').onclick = () => { if (gameState === "playing") { restartGame(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; } };
         document.getElementById('exitMenuBtn').onclick = () => { exitToMenu(); paused = false; document.getElementById('pauseOverlay').style.display = 'none'; };
-        document.getElementById('claimBtn').onclick = () => alert('💰 CLAIM IFC: ' + score + ' IFC\n(Real wallet integration coming soon!)');
+        document.getElementById('claimBtn').onclick = () => alert('🔧 SMART CONTRACT DEPLOYMENT SOON');
         window.onkeydown = (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } if (e.code === 'KeyP' && gameState === "playing") togglePause(); };
     })();
 </script>
