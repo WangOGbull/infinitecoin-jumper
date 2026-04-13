@@ -2,27 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Infinitecoin Jumper - Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Infinitecoin Jumper - Pixel Ninja Hero</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
-        body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace}
-        .game-container{position:relative;width:100%;max-width:480px}
-        canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer}
-        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;display:none}
+        body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace;touch-action:manipulation}
+        .game-container{position:relative;width:100%;max-width:480px;margin:0 auto}
+        canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer;touch-action:manipulation}
+        #score{position:absolute;top:15px;left:15px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 14px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;display:none}
         #healthBarContainer{position:absolute;top:15px;left:50%;transform:translateX(-50%);width:120px;height:12px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
         #healthBar{width:100%;height:100%;background:#00ff00;transition:width 0.2s ease}
-        #pauseBtn{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:14px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
-        .ctrl-btn{position:absolute;bottom:20px;right:20px;background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;font-size:22px;padding:12px 24px;border-radius:60px}
+        #pauseBtn{position:absolute;top:15px;right:15px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:14px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
+        .ctrl-btn{position:absolute;bottom:20px;right:20px;background:rgba(0,0,0,0.7);border:2px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;touch-action:manipulation;font-size:22px;padding:12px 24px;border-radius:60px}
         .ctrl-btn:active{background:#3b82f6;color:#000;transform:scale(0.96)}
-        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
+        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
         #gameOver h2{color:#3b82f6;margin-bottom:15px}
         #gameOver p{color:white;font-size:22px;margin-bottom:20px}
         #restartBtn{background:#3b82f6;border:none;padding:10px 25px;border-radius:40px;font-size:18px;font-weight:bold;cursor:pointer}
         .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:#3b82f6;display:none}
         #pauseOverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);border-radius:24px;z-index:25;display:none;flex-direction:column;justify-content:center;align-items:center;gap:20px}
-        #pauseOverlay .pause-title{color:#3b82f6;font-size:28px;font-weight:bold}
-        #pauseOverlay .pause-stats{color:white;font-size:18px;text-align:center}
+        #pauseOverlay .pause-title{color:#3b82f6;font-size:28px;font-weight:bold;margin-bottom:10px}
+        #pauseOverlay .pause-stats{color:white;font-size:18px;text-align:center;margin-bottom:10px}
         #pauseOverlay .pause-stats span{color:#3b82f6;font-weight:bold}
         .pause-btn-custom{background:rgba(59,130,246,0.2);border:2px solid #3b82f6;color:#3b82f6;padding:10px 30px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;margin:5px;min-width:160px;text-align:center}
         .pause-btn-custom:active{background:#3b82f6;color:#000;transform:scale(0.96)}
@@ -68,11 +68,10 @@
         let hitBlinkCounter = 0;
         let difficultyTier = 0;
         let virusCount = 0;
-        let entranceAnimation = false;
-        let entranceProgress = 0;
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
+        let frameCounter = 0;
 
-        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJumpPower: -9.5 };
+        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
         const GROUND_Y = H - 60;
@@ -143,17 +142,6 @@
             }
         }
 
-        function startEntrance() {
-            gameState = "entrance";
-            entranceAnimation = true;
-            entranceProgress = 0;
-            document.getElementById('score').style.display = 'none';
-            document.getElementById('healthBarContainer').style.display = 'none';
-            document.getElementById('pauseBtn').style.display = 'none';
-            document.getElementById('jumpBtn').style.display = 'none';
-            document.querySelector('.game-footer').style.display = 'none';
-        }
-
         function startGame() {
             gameState = "playing";
             gameRunning = true;
@@ -169,7 +157,7 @@
             viruses = [];
             blackViruses = [];
             healthItems = [];
-            player.baseJumpPower = -9.5;
+            player.baseJump = -9.5;
             initGround();
             player.y = GROUND_Y - player.height;
             player.vy = 0;
@@ -181,8 +169,8 @@
             document.getElementById('healthBarContainer').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
             document.getElementById('jumpBtn').style.display = 'block';
-            document.querySelector('.game-footer').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
+            document.querySelector('.game-footer').style.display = 'block';
             document.getElementById('pauseOverlay').style.display = 'none';
             updateUI();
             
@@ -222,16 +210,16 @@
                     
                     if (score >= 2000 && difficultyTier === 1) {
                         difficultyTier = 2;
-                        currentSpeed = 5.5;
-                        player.baseJumpPower = -11.0;
+                        currentSpeed = 5.8;
+                        player.baseJump = -11.0;
                     } else if (score >= 1000 && difficultyTier === 0) {
                         difficultyTier = 1;
                         currentSpeed = 3.8;
                     }
                     
                     if (difficultyTier === 2) {
-                        currentSpeed = 5.5 + Math.floor((score - 2000) / 400) * 0.3;
-                        if (currentSpeed > 7.0) currentSpeed = 7.0;
+                        currentSpeed = 5.8 + Math.floor((score - 2000) / 400) * 0.3;
+                        if (currentSpeed > 7.2) currentSpeed = 7.2;
                     } else if (difficultyTier === 1) {
                         currentSpeed = 3.8 + Math.floor((score - 1000) / 300) * 0.2;
                         if (currentSpeed > 4.8) currentSpeed = 4.8;
@@ -287,7 +275,6 @@
         }
 
         function updatePlayer() {
-            let jumpPower = player.baseJumpPower;
             player.vy += 0.65;
             player.y += player.vy;
             player.grounded = false;
@@ -308,12 +295,11 @@
 
         function jump() {
             if (!gameRunning || paused) return;
-            let jumpPower = player.baseJumpPower;
             if (player.grounded) { 
-                player.vy = jumpPower; 
+                player.vy = player.baseJump; 
                 player.grounded = false; 
             } else if (!player.doubleJumpUsed) { 
-                player.vy = jumpPower + 0.5; 
+                player.vy = player.baseJump + 0.8; 
                 player.doubleJumpUsed = true; 
             }
         }
@@ -339,14 +325,91 @@
             }
         }
 
-        function drawInfinity(x, y, size, value, color = '#3b82f6', glowColor = '#3b82f6') {
+        // PIXEL NINJA HERO CHARACTER
+        function drawPlayer() {
+            let x = player.x, y = player.y;
+            let runCycle = Math.floor(Date.now() * 0.015) % 4;
+            let isRunning = !player.grounded && player.vy !== 0 ? false : (player.grounded && (Math.abs(player.vy) < 0.1));
+            let legOffset = isRunning ? (Math.sin(Date.now() * 0.015) * 4) : 2;
+            let armSwing = isRunning ? (Math.sin(Date.now() * 0.018) * 5) : 0;
+            let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
+            
+            ctx.save();
+            if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Legs (ninja pants)
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
+            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
+            
+            // Shoes
+            ctx.fillStyle = '#0a2a3a';
+            ctx.fillRect(x+3, y+38, 9, 5);
+            ctx.fillRect(x+18, y+38, 9, 5);
+            
+            // Body (ninja suit)
+            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
+            gradBody.addColorStop(0, '#3b82f6');
+            gradBody.addColorStop(1, '#1a4a8a');
+            ctx.fillStyle = gradBody;
+            ctx.fillRect(x+5, y+12, 20, 22);
+            
+            // Infinity symbol on chest
+            drawInfinity(x+15, y+22, 7, null, true, '#3b82f6', '#3b82f6');
+            
+            // Arms (ninja arms)
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(x-4 + armSwing, y+16, 7, 8);
+            ctx.fillRect(x+27 - armSwing, y+16, 7, 8);
+            
+            // Hands (shuriken style)
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(x-5 + armSwing, y+22, 4, 4);
+            ctx.fillRect(x+31 - armSwing, y+22, 4, 4);
+            
+            // Head (ninja mask)
+            ctx.fillStyle = '#2a5a8a';
+            ctx.fillRect(x+6, y+2, 18, 14);
+            
+            // Ninja mask eye slit
+            ctx.fillStyle = '#0a1a2a';
+            ctx.fillRect(x+8, y+7, 6, 3);
+            ctx.fillRect(x+16, y+7, 6, 3);
+            
+            // Glowing eyes
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#3b82f6';
+            ctx.fillRect(x+9, y+8, 4, 2);
+            ctx.fillRect(x+17, y+8, 4, 2);
+            
+            // Ninja headband
+            ctx.fillStyle = '#f5a623';
+            ctx.fillRect(x+4, y+4, 22, 3);
+            
+            // Cape (hero cape)
+            ctx.fillStyle = '#1a3a5a';
+            ctx.beginPath();
+            ctx.moveTo(x+22, y+14);
+            ctx.lineTo(x+28, y+28);
+            ctx.lineTo(x+22, y+26);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = glowColor;
+            if (isGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = shadowColor; }
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.beginPath();
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = color;
             ctx.fill();
@@ -373,7 +436,6 @@
             ctx.shadowColor = '#00ff00';
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.beginPath();
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.fillStyle = '#00ff00';
             ctx.fill();
@@ -427,87 +489,6 @@
             ctx.restore();
         }
 
-        function drawPlayer() {
-            let x = player.x, y = player.y;
-            let legOffset = Math.sin(Date.now() * 0.012) * 4;
-            let armOffset = Math.sin(Date.now() * 0.015) * 5;
-            let orbRotate = Date.now() * 0.008;
-            let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
-            
-            ctx.save();
-            if (blink) {
-                ctx.globalAlpha = 0.4;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#ffffff';
-            }
-            
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
-            ctx.fill();
-            
-            ctx.fillStyle = '#1a5a8a';
-            ctx.fillRect(x+5, y+28, 7, 12 + legOffset);
-            ctx.fillRect(x+18, y+28 - legOffset, 7, 12 + legOffset);
-            
-            ctx.fillStyle = '#0a2a4a';
-            ctx.fillRect(x+3, y+38, 9, 6);
-            ctx.fillRect(x+18, y+38, 9, 6);
-            
-            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
-            gradBody.addColorStop(0, '#3b82f6');
-            gradBody.addColorStop(1, '#1a4a8a');
-            ctx.fillStyle = gradBody;
-            ctx.fillRect(x+5, y+12, 20, 24);
-            
-            drawInfinity(x+15, y+24, 9, null, '#3b82f6', '#3b82f6');
-            
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(x-3 + armOffset, y+18, 8, 10);
-            ctx.fillRect(x+25 - armOffset, y+18, 8, 10);
-            
-            ctx.save();
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#3b82f6';
-            ctx.beginPath();
-            ctx.arc(x-6 + armOffset + Math.sin(orbRotate) * 3, y+23, 7, 0, Math.PI*2);
-            ctx.fillStyle = '#3b82f6';
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(x+28 - armOffset + Math.cos(orbRotate) * 3, y+23, 7, 0, Math.PI*2);
-            ctx.fill();
-            drawInfinity(x-6 + armOffset + Math.sin(orbRotate) * 3, y+23, 6, null, '#3b82f6', '#3b82f6');
-            drawInfinity(x+28 - armOffset + Math.cos(orbRotate) * 3, y+23, 6, null, '#3b82f6', '#3b82f6');
-            ctx.restore();
-            
-            drawInfinity(x+15, y+6, 16, null, '#3b82f6', '#3b82f6');
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#3b82f6';
-            ctx.beginPath();
-            ctx.ellipse(x+8, y+2, 4, 5, 0, 0, Math.PI*2);
-            ctx.ellipse(x+22, y+2, 4, 5, 0, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = '#3b82f6';
-            ctx.beginPath();
-            ctx.ellipse(x+8, y+2, 2.5, 3, 0, 0, Math.PI*2);
-            ctx.ellipse(x+22, y+2, 2.5, 3, 0, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = '#000000';
-            ctx.beginPath();
-            ctx.arc(x+7, y+1, 1.2, 0, Math.PI*2);
-            ctx.arc(x+21, y+1, 1.2, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(x+5, y-1, 0.8, 0, Math.PI*2);
-            ctx.arc(x+19, y-1, 0.8, 0, Math.PI*2);
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
         function drawGround() {
             for (let seg of groundSegments) {
                 let drawX = seg.x - worldOffset;
@@ -521,7 +502,7 @@
         function drawCollectibles() {
             for (let c of collectibles) {
                 let floatY = Math.sin(Date.now() * 0.003 + c.floatOffset) * 3;
-                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, '#3b82f6', '#3b82f6');
+                drawInfinity(c.x, c.y + floatY, c.radius+1, c.value, true, '#3b82f6', '#3b82f6');
             }
         }
 
@@ -559,33 +540,17 @@
             ctx.shadowBlur = 35;
             ctx.shadowColor = '#3b82f6';
             ctx.globalAlpha = 0.85;
-            drawInfinity(W/2, H/3.2, 65, null, '#3b82f6', '#3b82f6');
+            drawInfinity(W/2, H/3.2, 65, null, true, '#3b82f6', '#3b82f6');
             ctx.restore();
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.15;
                 ctx.shadowBlur = 8;
-                drawInfinity(b.x, b.y, b.size, null, '#3b82f6', '#3b82f6');
+                drawInfinity(b.x, b.y, b.size, null, true, '#3b82f6', '#3b82f6');
                 ctx.restore();
                 b.x -= b.speed;
                 if (b.x + b.size < 0) b.x = W + b.size;
             }
-        }
-
-        function drawEntrance() {
-            drawBackground();
-            let logoSize = 40 + entranceProgress * 25;
-            if (logoSize > 100) logoSize = 100;
-            drawInfinity(W/2, H/2, logoSize, null, '#a855f7', '#a855f7');
-            if (entranceProgress > 20) {
-                let charX = W/2 + (entranceProgress - 20) * 3;
-                if (charX > 100) charX = 100;
-                player.x = charX;
-                player.y = GROUND_Y - player.height;
-                drawPlayer();
-            }
-            entranceProgress++;
-            if (entranceProgress > 60) startGame();
         }
 
         function gameOver() {
@@ -625,7 +590,6 @@
         function updateGame() { if (gameState === "playing" && gameRunning && !paused) { updateWorld(); updatePlayer(); updateCollectibles(); updateHealthItems(); updateViruses(); } }
         function draw() {
             if (gameState === "menu") drawMenu();
-            else if (gameState === "entrance") drawEntrance();
             else { drawBackground(); drawGround(); drawCollectibles(); drawHealthItems(); drawViruses(); drawPlayer(); if (gameState === "playing") { ctx.font = 'bold 10px monospace'; ctx.fillStyle = '#3b82f6'; ctx.fillText('✦ COLLECT INFINITE SAMPLES ✦', W/2-105, 32); if (difficultyTier >= 2) { ctx.fillStyle = '#ff4444'; ctx.fillText('⚡ NIGHTMARE MODE ⚡', W/2-65, 55); } else if (difficultyTier >= 1) { ctx.fillStyle = '#ffaa44'; ctx.fillText('⚡ HARD MODE ⚡', W/2-50, 55); } } }
         }
         function animate() { updateGame(); draw(); requestAnimationFrame(animate); }
@@ -633,8 +597,8 @@
         initGround();
         animate();
 
-        canvas.addEventListener('click', (e) => { if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; let mouseX = (e.clientX - rect.left) * scaleX; let mouseY = (e.clientY - rect.top) * scaleY; if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) startEntrance(); });
-        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const touch = e.touches[0]; let touchX = (touch.clientX - rect.left) * scaleX; let touchY = (touch.clientY - rect.top) * scaleY; if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) startEntrance(); });
+        canvas.addEventListener('click', (e) => { if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; let mouseX = (e.clientX - rect.left) * scaleX; let mouseY = (e.clientY - rect.top) * scaleY; if (mouseX > W/2-60 && mouseX < W/2+60 && mouseY > H/2+100 && mouseY < H/2+142) startGame(); });
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameState !== "menu") return; const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height; const touch = e.touches[0]; let touchX = (touch.clientX - rect.left) * scaleX; let touchY = (touch.clientY - rect.top) * scaleY; if (touchX > W/2-60 && touchX < W/2+60 && touchY > H/2+100 && touchY < H/2+142) startGame(); });
 
         document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
         document.getElementById('jumpBtn').ontouchstart = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
