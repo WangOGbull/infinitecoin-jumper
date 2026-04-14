@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Infinitecoin Jumper - 2D Upgraded</title>
+    <title>Infinitecoin Jumper - Final</title>
     <style>
         * {
             margin: 0;
@@ -299,6 +299,12 @@
         canvas.width = W;
         canvas.height = H;
 
+        // Background image (your image)
+        const bgImage = new Image();
+        bgImage.src = "https://i.imgur.com/7kZqo0K.jpeg"; // Replace with your actual image URL
+        let bgImageLoaded = false;
+        bgImage.onload = () => { bgImageLoaded = true; };
+
         // Professional Space Sounds (Web Audio)
         let soundEnabled = true;
         let audioContext = null;
@@ -368,7 +374,6 @@
                         osc2.stop(now + 0.5);
                     }, 100);
                 } else if (type === 'health') {
-                    // "Neo" style sound for +50% health
                     osc.frequency.value = 659.25;
                     gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.4);
                     osc.start();
@@ -539,12 +544,12 @@
         function spawnVirus(isBlack = false, isDeepRed = false) {
             if (!virusSpawnEnabled) return;
             if (level4Active) {
-                // Level 4 spikes: deep red + black mix
                 let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
+                let sizeMultiplier = 2;
                 if (colorType === 'black') {
-                    blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0, level4: true });
+                    blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
                 } else {
-                    viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0, level4: true, deepRed: true });
+                    viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                 }
             } else if (isBlack) {
                 blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
@@ -556,14 +561,15 @@
         function spawnClusteredViruses(count, isBlack = false) {
             if (!virusSpawnEnabled) return;
             let baseX = 350 + Math.random() * 150;
-            let spacing = isBlack ? 38 : 28;
+            let spacing = isBlack ? 50 : 40;
             for (let i = 0; i < count; i++) {
                 if (level4Active) {
                     let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
+                    let sizeMultiplier = 2;
                     if (colorType === 'black') {
-                        blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0, level4: true });
+                        blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
                     } else {
-                        viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0, level4: true, deepRed: true });
+                        viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                     }
                 } else if (isBlack) {
                     blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
@@ -676,12 +682,11 @@
                     // Check for Level 4 activation at 100,000 IFC
                     if (score >= 100000 && !level4Active) {
                         level4Active = true;
-                        currentSpeed = 6.5;
-                        player.baseJump = -11.5;
+                        currentSpeed = 8.5;
+                        player.baseJump = -12.0;
                         startSafeMode(5);
                     }
                     
-                    let oldTier = difficultyTier;
                     if (!level4Active) {
                         if (score >= 2000 && difficultyTier === 1) {
                             difficultyTier = 2;
@@ -696,8 +701,8 @@
                     }
                     
                     if (level4Active) {
-                        currentSpeed = 6.5 + Math.floor((score - 100000) / 50000) * 0.2;
-                        if (currentSpeed > 7.5) currentSpeed = 7.5;
+                        currentSpeed = 8.5 + Math.floor((score - 100000) / 50000) * 0.3;
+                        if (currentSpeed > 9.5) currentSpeed = 9.5;
                     } else if (difficultyTier === 2) {
                         currentSpeed = 5.8 + Math.floor((score - 2000) / 400) * 0.3;
                         if (currentSpeed > 7.2) currentSpeed = 7.2;
@@ -748,6 +753,13 @@
             let anyVirusPassed = false;
             for (let i = 0; i < viruses.length; i++) {
                 let v = viruses[i];
+                if (v.moveTowardPlayer && level4Active) {
+                    // Move toward player when close
+                    let dx = player.x - v.x;
+                    if (Math.abs(dx) < 80) {
+                        v.x += (dx > 0 ? 1.5 : -1.5);
+                    }
+                }
                 v.x -= currentSpeed;
                 v.shake = Math.sin(Date.now() * 0.015 + i) * 2;
                 if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
@@ -770,6 +782,12 @@
             }
             for (let i = 0; i < blackViruses.length; i++) {
                 let v = blackViruses[i];
+                if (v.moveTowardPlayer && level4Active) {
+                    let dx = player.x - v.x;
+                    if (Math.abs(dx) < 80) {
+                        v.x += (dx > 0 ? 1.8 : -1.8);
+                    }
+                }
                 v.x -= currentSpeed;
                 v.shake = Math.sin(Date.now() * 0.015 + i) * 3;
                 if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
@@ -927,39 +945,41 @@
             ctx.fillText('+50%', x-15, y-12);
         }
 
-        // Virus Drawing (Red, Deep Red, Black)
-        function drawVirus(x, y, shake, isBlack = false, isDeepRed = false) {
+        // Virus Drawing (Red, Deep Red, Black) - Level 4 spikes are 2x larger
+        function drawVirus(x, y, shake, isBlack = false, isDeepRed = false, isLevel4 = false) {
             ctx.save();
             ctx.translate(x + shake, y);
+            let width = isLevel4 ? (isBlack ? 36 : 28) : (isBlack ? 24 : 18);
+            let height = isLevel4 ? (isBlack ? 40 : 32) : (isBlack ? 26 : 20);
             let mainColor = isBlack ? '#1a1a1a' : (isDeepRed ? '#8b0000' : '#8b0000');
             let innerColor = isBlack ? '#333333' : (isDeepRed ? '#cc0000' : '#ff4444');
             ctx.fillStyle = mainColor;
             ctx.beginPath();
-            ctx.arc(9, 10, 9, 0, Math.PI*2);
+            ctx.ellipse(width/2, height/2, width/2, height/2, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = innerColor;
             ctx.beginPath();
-            ctx.arc(9, 10, 6, 0, Math.PI*2);
+            ctx.ellipse(width/2, height/2, width/2.5, height/2.5, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(6, 7, 2, 0, Math.PI*2);
-            ctx.arc(12, 7, 2, 0, Math.PI*2);
+            ctx.ellipse(width/3, height/3, width/8, height/8, 0, 0, Math.PI*2);
+            ctx.ellipse(width - width/3, height/3, width/8, height/8, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#000000';
             ctx.beginPath();
-            ctx.arc(5.5, 6.5, 1, 0, Math.PI*2);
-            ctx.arc(11.5, 6.5, 1, 0, Math.PI*2);
+            ctx.ellipse(width/3.2, height/3.2, width/16, height/16, 0, 0, Math.PI*2);
+            ctx.ellipse(width - width/3.2, height/3.2, width/16, height/16, 0, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = isBlack ? '#660000' : '#ff0000';
             ctx.beginPath();
-            ctx.ellipse(9, 13, 3, 2, 0, 0, Math.PI*2);
+            ctx.ellipse(width/2, height - height/4, width/6, height/8, 0, 0, Math.PI*2);
             ctx.fill();
             for (let i = 0; i < 5; i++) {
                 ctx.beginPath();
-                ctx.moveTo(9 + Math.sin(i) * 12, 10 + Math.cos(i*2) * 8);
-                ctx.lineTo(9 + Math.sin(i+0.5) * 6, 10 + Math.cos((i+0.5)*2) * 4);
-                ctx.lineTo(9 + Math.sin(i-0.5) * 6, 10 + Math.cos((i-0.5)*2) * 4);
+                ctx.moveTo(width/2 + Math.sin(i) * width/2, height/2 + Math.cos(i*2) * height/2.5);
+                ctx.lineTo(width/2 + Math.sin(i+0.5) * width/3, height/2 + Math.cos((i+0.5)*2) * height/3);
+                ctx.lineTo(width/2 + Math.sin(i-0.5) * width/3, height/2 + Math.cos((i-0.5)*2) * height/3);
                 ctx.fillStyle = isBlack ? '#440000' : '#aa2222';
                 ctx.fill();
             }
@@ -1069,8 +1089,8 @@
         }
 
         function drawViruses() {
-            for (let v of viruses) drawVirus(v.x, v.y, v.shake, false, v.deepRed);
-            for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false);
+            for (let v of viruses) drawVirus(v.x, v.y, v.shake, false, v.deepRed, v.level4);
+            for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
         // Dark space background with large glowing planet and HUGE INFINITE BEING
@@ -1182,12 +1202,19 @@
         for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
-            let grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, '#0a0a2a');
-            grad.addColorStop(0.5, '#15153a');
-            grad.addColorStop(1, '#1a1a3a');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, W, H);
+            // Draw your custom image as the base background
+            if (bgImageLoaded) {
+                ctx.drawImage(bgImage, 0, 0, W, H);
+            } else {
+                // Fallback gradient if image not loaded
+                let grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, '#0a0a2a');
+                grad.addColorStop(0.5, '#15153a');
+                grad.addColorStop(1, '#1a1a3a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+            }
+            
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
@@ -1228,7 +1255,17 @@
 
         // 2D Upgraded Startup Menu
         function drawMenu() {
-            drawBackground();
+            // Draw background with your image
+            if (bgImageLoaded) {
+                ctx.drawImage(bgImage, 0, 0, W, H);
+            } else {
+                let grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, '#0a0a2a');
+                grad.addColorStop(0.5, '#15153a');
+                grad.addColorStop(1, '#1a1a3a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+            }
             
             ctx.font = 'bold 28px monospace';
             ctx.fillStyle = '#3b82f6';
