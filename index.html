@@ -299,9 +299,9 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Background image (your infinite being image) - only used in game scene
+        // Background image (your new image)
         const bgImage = new Image();
-        bgImage.src = "https://i.imgur.com/GGE9r7I.jpeg";
+        bgImage.src = "https://i.postimg.cc/PrG8sJBr/5976645751045558267.jpg";
         let bgImageLoaded = false;
         bgImage.onload = () => { bgImageLoaded = true; };
         bgImage.onerror = () => { console.log("Background image failed to load"); };
@@ -651,7 +651,32 @@
                 if (gameRunning && !paused && virusSpawnEnabled) {
                     virusCount++;
                     if (level4Active) {
-                        if (viruses.length + blackViruses.length < 4) spawnClusteredViruses(2);
+                        if (viruses.length + blackViruses.length < 5) {
+                            // Level 4: 3 spikes pattern - first 2 together, third delayed
+                            let colorType1 = Math.random() > 0.5 ? 'deepred' : 'black';
+                            let colorType2 = Math.random() > 0.5 ? 'deepred' : 'black';
+                            if (colorType1 === 'black') {
+                                blackViruses.push({ x: 350 + Math.random() * 150, y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
+                            } else {
+                                viruses.push({ x: 350 + Math.random() * 150, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
+                            }
+                            if (colorType2 === 'black') {
+                                blackViruses.push({ x: 380 + Math.random() * 150, y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
+                            } else {
+                                viruses.push({ x: 380 + Math.random() * 150, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
+                            }
+                            // Third spike delayed by 1-1.5 seconds
+                            setTimeout(() => {
+                                if (gameRunning && !paused && virusSpawnEnabled) {
+                                    let colorType3 = Math.random() > 0.5 ? 'deepred' : 'black';
+                                    if (colorType3 === 'black') {
+                                        blackViruses.push({ x: 410 + Math.random() * 150, y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true, extraSpeed: true });
+                                    } else {
+                                        viruses.push({ x: 410 + Math.random() * 150, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true, extraSpeed: true });
+                                    }
+                                }
+                            }, 1200);
+                        }
                     } else if (difficultyTier >= 2) {
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
                         if (blackViruses.length < 2) spawnClusteredViruses(2, true);
@@ -755,7 +780,7 @@
                 if (v.moveTowardPlayer && level4Active) {
                     let dx = player.x - v.x;
                     if (Math.abs(dx) < 80) {
-                        v.x += (dx > 0 ? 1.5 : -1.5);
+                        v.x += (dx > 0 ? (v.extraSpeed ? 2.5 : 1.5) : (v.extraSpeed ? -2.5 : -1.5));
                     }
                 }
                 v.x -= currentSpeed;
@@ -783,7 +808,7 @@
                 if (v.moveTowardPlayer && level4Active) {
                     let dx = player.x - v.x;
                     if (Math.abs(dx) < 80) {
-                        v.x += (dx > 0 ? 1.8 : -1.8);
+                        v.x += (dx > 0 ? (v.extraSpeed ? 2.8 : 1.8) : (v.extraSpeed ? -2.8 : -1.8));
                     }
                 }
                 v.x -= currentSpeed;
@@ -869,11 +894,14 @@
             }
         }
 
-        // Crisp 2D Infinity Symbol Drawing
+        // Crisp 2D Infinity Symbol Drawing - Brighter, Neo Blue Glow
         function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            if (isGlowing) { ctx.shadowBlur = 12; ctx.shadowColor = shadowColor; }
+            if (isGlowing) { 
+                ctx.shadowBlur = 18; 
+                ctx.shadowColor = shadowColor;
+            }
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
@@ -889,7 +917,7 @@
             if (value) {
                 ctx.font = `bold ${size-2}px monospace`;
                 ctx.fillStyle = '#ffffff';
-                ctx.shadowBlur = 4;
+                ctx.shadowBlur = 6;
                 ctx.fillText(`+${value}`, x-10, y-15);
                 ctx.shadowBlur = 0;
             }
@@ -920,16 +948,16 @@
             ctx.restore();
         }
 
-        // Green Health Item
+        // Green Health Item - Brighter Neo Blue Glow style
         function drawGreenHealth(x, y, size) {
             ctx.save();
             ctx.translate(x, y);
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#00ff00';
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = '#00ccff';
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.fillStyle = '#00ff00';
+            ctx.fillStyle = '#00ccff';
             ctx.fill();
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
@@ -940,7 +968,9 @@
             ctx.restore();
             ctx.font = `bold ${size-4}px monospace`;
             ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 6;
             ctx.fillText('+50%', x-15, y-12);
+            ctx.shadowBlur = 0;
         }
 
         // Virus Drawing (Red, Deep Red, Black) - Level 4 spikes are 2x larger
@@ -1091,13 +1121,13 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Moving planets - transparent, lower position, slightly larger
+        // Moving planets - Game theme colors (blue/purple/cyan), transparent
         let planetsQueue = [
-            { x: -150, y: 140, size: 90, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true, alpha: 0.4 },
-            { x: -150, y: 300, size: 105, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false, alpha: 0.4 },
-            { x: -150, y: 420, size: 80, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', active: false, alpha: 0.4 },
-            { x: -150, y: 520, size: 95, color1: '#ec4899', color2: '#be185d', ring: false, active: false, alpha: 0.4 },
-            { x: -150, y: 200, size: 85, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', active: false, alpha: 0.4 }
+            { x: -150, y: 140, size: 90, color1: '#3b82f6', color2: '#1e40af', ring: true, ringColor: '#60a5fa', active: true, alpha: 0.4 },
+            { x: -150, y: 300, size: 105, color1: '#8b5cf6', color2: '#6d28d9', ring: false, active: false, alpha: 0.4 },
+            { x: -150, y: 420, size: 80, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#22d3ee', active: false, alpha: 0.4 },
+            { x: -150, y: 520, size: 95, color1: '#6366f1', color2: '#4338ca', ring: false, active: false, alpha: 0.4 },
+            { x: -150, y: 200, size: 85, color1: '#a855f7', color2: '#7e22ce', ring: true, ringColor: '#c084fc', active: false, alpha: 0.4 }
         ];
         let currentPlanetIndex = 0;
         let planetSpeed = 1.0;
