@@ -3,55 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Infinitecoin Jumper | Play to Earn IFC</title>
+    <title>Infinitecoin Jumper - 2D Upgraded</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
-        body{background:#0a0a2a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:monospace;touch-action:manipulation}
-        .game-container{position:relative;width:100%;max-width:480px;margin:0 auto}
-        canvas{display:block;width:100%;height:auto;border-radius:24px;cursor:pointer;touch-action:manipulation}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #0a0a2a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 24px;
+            cursor: pointer;
+            background: #0a0a2a;
+        }
         
-        /* Top bar - clean spacing */
-        #score{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:15px;z-index:10;border:1px solid #3b82f6;display:none}
-        .top-text{position:absolute;top:12px;left:100px;right:100px;text-align:center;z-index:10;pointer-events:none;display:none}
-        .top-text .lavish{color:#f5a623;font-size:8px;font-weight:bold;letter-spacing:1px}
-        .top-text .momentum{color:#3b82f6;font-size:6px;margin-top:1px}
-        #healthBarContainer{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:10px;background:rgba(0,0,0,0.6);border-radius:20px;z-index:10;display:none;overflow:hidden;border:1px solid #3b82f6}
-        #healthBar{width:100%;height:100%;background:#00ff00;transition:width 0.2s ease}
+        /* UI Layout - Health bar below IFC */
+        #score {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #3b82f6;
+            font-weight: bold;
+            font-family: monospace;
+            z-index: 10;
+            border: 1px solid #3b82f6;
+            display: none;
+            white-space: nowrap;
+        }
         
-        /* Pause button - icon only */
-        #pauseBtn{position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:6px 10px;border-radius:40px;color:#3b82f6;font-weight:bold;font-size:18px;z-index:10;border:1px solid #3b82f6;cursor:pointer;display:none}
+        /* Dynamic font size for IFC */
+        .score-small { font-size: 16px; }
+        .score-medium { font-size: 14px; }
+        .score-large { font-size: 12px; }
+        .score-xlarge { font-size: 10px; }
         
-        .ctrl-btn{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);background:rgba(59,130,246,0.3);border:3px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer;backdrop-filter:blur(8px);z-index:20;display:none;touch-action:manipulation;font-size:32px;padding:10px 28px;border-radius:60px;width:auto;text-align:center;box-shadow:0 0 15px rgba(59,130,246,0.3)}
-        .ctrl-btn:active{background:#3b82f6;color:#000;transform:translateX(-50%) scale(0.96)}
-        #gameOver{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.95);backdrop-filter:blur(10px);padding:25px 35px;border-radius:32px;text-align:center;z-index:30;display:none;border:1px solid #3b82f6}
-        #gameOver h2{color:#3b82f6;margin-bottom:15px}
-        #gameOver p{color:white;font-size:22px;margin-bottom:20px}
-        .gameover-buttons{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-        .gameover-btn{background:#3b82f6;border:none;padding:10px 20px;border-radius:40px;font-size:16px;font-weight:bold;cursor:pointer;margin:3px 0}
-        .gameover-btn:active{transform:scale(0.96)}
-        .game-footer{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:10px;color:#3b82f6;display:none}
-        #pauseOverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);border-radius:24px;z-index:25;display:none;flex-direction:column;justify-content:center;align-items:center;gap:20px}
-        #pauseOverlay .pause-title{color:#3b82f6;font-size:28px;font-weight:bold;margin-bottom:10px}
-        #pauseOverlay .pause-stats{color:white;font-size:18px;text-align:center;margin-bottom:10px}
-        #pauseOverlay .pause-stats span{color:#3b82f6;font-weight:bold}
-        .pause-btn-custom{background:rgba(59,130,246,0.2);border:2px solid #3b82f6;color:#3b82f6;padding:10px 30px;border-radius:50px;font-size:18px;font-weight:bold;cursor:pointer;margin:5px;min-width:160px;text-align:center}
-        .pause-btn-custom:active{background:#3b82f6;color:#000;transform:scale(0.96)}
-        .pause-buttons-row{display:flex;flex-direction:column;gap:12px;align-items:center}
-        .sound-btn{background:rgba(0,0,0,0.6);border:1px solid #3b82f6;color:#3b82f6;padding:6px 12px;border-radius:40px;font-size:12px;cursor:pointer;margin-top:10px}
-        .sound-btn:active{background:#3b82f6;color:#000}
+        #healthBarContainer {
+            position: absolute;
+            top: 38px;
+            left: 12px;
+            width: 100px;
+            height: 8px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 10px;
+            z-index: 10;
+            display: none;
+            overflow: hidden;
+            border: 1px solid #3b82f6;
+        }
+        #healthBar {
+            width: 100%;
+            height: 100%;
+            background: #00ff00;
+            transition: width 0.2s ease;
+        }
+        
+        /* Pause button - top right */
+        #pauseBtn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 40px;
+            color: #3b82f6;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 10;
+            border: 1px solid #3b82f6;
+            cursor: pointer;
+            display: none;
+        }
+        
+        /* Jump button - 2D upgraded ∞ logo */
+        .ctrl-btn {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            z-index: 20;
+            display: none;
+            touch-action: manipulation;
+            font-size: 36px;
+            padding: 8px 28px;
+            border-radius: 60px;
+            width: auto;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(59,130,246,0.3);
+            font-family: monospace;
+        }
+        .ctrl-btn:active {
+            background: #3b82f6;
+            color: #000;
+            transform: translateX(-50%) scale(0.96);
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px 35px;
+            border-radius: 32px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+            border: 2px solid #3b82f6;
+        }
+        #gameOver h2 {
+            color: #3b82f6;
+            margin-bottom: 15px;
+            font-family: monospace;
+        }
+        #gameOver p {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        .gameover-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .gameover-btn {
+            background: #3b82f6;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 3px 0;
+            font-family: monospace;
+        }
+        .gameover-btn:active {
+            transform: scale(0.96);
+        }
+        .game-footer {
+            position: absolute;
+            bottom: -28px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 10px;
+            color: #3b82f6;
+            display: none;
+        }
+        
+        /* Pause Menu - 2D upgraded */
+        #pauseOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            z-index: 25;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #pauseOverlay .pause-title {
+            color: #3b82f6;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        #pauseOverlay .pause-stats {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        #pauseOverlay .pause-stats span {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        .pause-btn-custom {
+            background: rgba(59,130,246,0.2);
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            min-width: 160px;
+            text-align: center;
+            font-family: monospace;
+        }
+        .pause-btn-custom:active {
+            background: #3b82f6;
+            color: #000;
+            transform: scale(0.96);
+        }
+        .pause-buttons-row {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        .sound-btn {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .sound-btn:active {
+            background: #3b82f6;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 <div class="game-container">
-    <div id="score">♾️ IFC: 0</div>
-    <div class="top-text" id="topText">
-        <div class="lavish">LAVISH NEO</div>
-        <div class="momentum">INFINITE MOMENTUM</div>
-    </div>
+    <div id="score">∞ IFC: 0</div>
     <div id="healthBarContainer"><div id="healthBar"></div></div>
     <div id="pauseBtn">⏸️</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
-    <button class="ctrl-btn" id="jumpBtn">♾️</button>
+    <button class="ctrl-btn" id="jumpBtn">∞</button>
     <div id="pauseOverlay">
         <div class="pause-title">⏸️ GAME PAUSED</div>
         <div class="pause-stats">💰 CURRENT IFC: <span id="pauseCurrentScore">0</span></div>
@@ -66,15 +281,16 @@
     </div>
     <div id="gameOver">
         <h2>✦ GAME OVER ✦</h2>
-        <p>♾️ IFC: <span id="finalScore">0</span></p>
+        <p>∞ IFC: <span id="finalScore">0</span></p>
         <div class="gameover-buttons">
             <button class="gameover-btn" id="gameoverRestartBtn">🔄 RESTART</button>
             <button class="gameover-btn" id="gameoverClaimBtn">💰 CLAIM IFC</button>
             <button class="gameover-btn" id="gameoverHomeBtn">🏠 RETURN HOME</button>
         </div>
     </div>
-    <div class="game-footer">♾️ INFINITE COIN | COLLECT ∞ | AVOID VIRUSES | DOUBLE JUMP</div>
+    <div class="game-footer">∞ INFINITE COIN | COLLECT ∞ | AVOID VIRUSES | DOUBLE JUMP</div>
 </div>
+
 <script>
     (function(){
         const canvas = document.getElementById('gameCanvas');
@@ -83,6 +299,7 @@
         canvas.width = W;
         canvas.height = H;
 
+        // Professional Space Sounds (Web Audio)
         let soundEnabled = true;
         let audioContext = null;
         
@@ -101,7 +318,7 @@
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
                 osc.type = 'sine';
-                gain.gain.value = 0.15;
+                gain.gain.value = 0.12;
                 
                 if (type === 'jump') {
                     osc.frequency.value = 523.25;
@@ -150,6 +367,23 @@
                         osc2.start();
                         osc2.stop(now + 0.5);
                     }, 100);
+                } else if (type === 'health') {
+                    // "Neo" style sound for +50% health
+                    osc.frequency.value = 659.25;
+                    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.4);
+                    osc.start();
+                    osc.stop(now + 0.4);
+                    setTimeout(() => {
+                        const osc2 = audioContext.createOscillator();
+                        const gain2 = audioContext.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(audioContext.destination);
+                        osc2.frequency.value = 783.99;
+                        gain2.gain.value = 0.1;
+                        gain2.gain.exponentialRampToValueAtTime(0.00001, now + 0.3);
+                        osc2.start();
+                        osc2.stop(now + 0.3);
+                    }, 80);
                 }
             } catch(e) { console.log('Audio error'); }
         }
@@ -163,6 +397,7 @@
             }
         }
 
+        // Game state
         let gameState = "menu";
         let gameRunning = false;
         let paused = false;
@@ -180,7 +415,26 @@
         let safeModeTimer = 0;
         let safeModeActive = false;
         
+        // Level 4 tracking
+        let level4Active = false;
+        
         let giftBox = null;
+        
+        // IFC font size management
+        function updateScoreFont() {
+            const scoreEl = document.getElementById('score');
+            if (!scoreEl) return;
+            scoreEl.classList.remove('score-small', 'score-medium', 'score-large', 'score-xlarge');
+            if (score >= 50000) {
+                scoreEl.classList.add('score-xlarge');
+            } else if (score >= 10000) {
+                scoreEl.classList.add('score-large');
+            } else if (score >= 5000) {
+                scoreEl.classList.add('score-medium');
+            } else if (score >= 1000) {
+                scoreEl.classList.add('score-small');
+            }
+        }
         
         function spawnGiftBox() {
             giftBox = {
@@ -212,6 +466,7 @@
             }, 1000);
         }
         
+        // Daily bonus (24-hour cooldown)
         let dailyBonusAvailable = false;
         let dailyBonusClaimed = false;
         
@@ -248,6 +503,7 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
+        // Player
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -267,6 +523,7 @@
         let healthItems = [];
 
         function getCoinValue() {
+            if (level4Active) return Math.floor(Math.random() * 61) + 40;
             if (difficultyTier >= 2) return Math.floor(Math.random() * 61) + 40;
             if (difficultyTier >= 1) return Math.floor(Math.random() * 21) + 10;
             return Math.floor(Math.random() * 16) + 5;
@@ -279,9 +536,17 @@
             collectibles.push({ x: x, y: y, radius: 11, value: value, collected: false, floatOffset: Math.random() * Math.PI * 2 });
         }
 
-        function spawnVirus(isBlack = false) {
+        function spawnVirus(isBlack = false, isDeepRed = false) {
             if (!virusSpawnEnabled) return;
-            if (isBlack) {
+            if (level4Active) {
+                // Level 4 spikes: deep red + black mix
+                let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
+                if (colorType === 'black') {
+                    blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0, level4: true });
+                } else {
+                    viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0, level4: true, deepRed: true });
+                }
+            } else if (isBlack) {
                 blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
             } else {
                 viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
@@ -293,7 +558,14 @@
             let baseX = 350 + Math.random() * 150;
             let spacing = isBlack ? 38 : 28;
             for (let i = 0; i < count; i++) {
-                if (isBlack) {
+                if (level4Active) {
+                    let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
+                    if (colorType === 'black') {
+                        blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0, level4: true });
+                    } else {
+                        viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0, level4: true, deepRed: true });
+                    }
+                } else if (isBlack) {
                     blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
                 } else {
                     viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
@@ -310,7 +582,10 @@
         let spawnInterval, virusInterval;
 
         function updateUI() {
-            document.getElementById('score').innerHTML = `♾️ IFC: ${score}`;
+            const scoreEl = document.getElementById('score');
+            scoreEl.innerHTML = `∞ IFC: ${score.toLocaleString()}`;
+            updateScoreFont();
+            
             let healthPercent = Math.max(0, health);
             document.getElementById('healthBar').style.width = `${healthPercent}%`;
             let hue = (healthPercent / 100) * 120;
@@ -333,6 +608,7 @@
             worldOffset = 0;
             hitBlinkCounter = 0;
             difficultyTier = 0;
+            level4Active = false;
             virusCount = 0;
             consecutiveDodges = 0;
             giftBoxSpawned = false;
@@ -350,7 +626,6 @@
             player.x = 100;
             
             document.getElementById('score').style.display = 'block';
-            document.getElementById('topText').style.display = 'block';
             document.getElementById('healthBarContainer').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
             document.getElementById('jumpBtn').style.display = 'block';
@@ -370,7 +645,9 @@
             virusInterval = setInterval(() => { 
                 if (gameRunning && !paused && virusSpawnEnabled) {
                     virusCount++;
-                    if (difficultyTier >= 2) {
+                    if (level4Active) {
+                        if (viruses.length + blackViruses.length < 4) spawnClusteredViruses(2);
+                    } else if (difficultyTier >= 2) {
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
                         if (blackViruses.length < 2) spawnClusteredViruses(2, true);
                     } else if (difficultyTier >= 1) {
@@ -396,18 +673,32 @@
                     updateUI();
                     playSound('collect');
                     
-                    if (score >= 2000 && difficultyTier === 1) {
-                        difficultyTier = 2;
-                        currentSpeed = 5.8;
-                        player.baseJump = -11.0;
-                        startSafeMode(5);
-                    } else if (score >= 1000 && difficultyTier === 0) {
-                        difficultyTier = 1;
-                        currentSpeed = 3.8;
+                    // Check for Level 4 activation at 100,000 IFC
+                    if (score >= 100000 && !level4Active) {
+                        level4Active = true;
+                        currentSpeed = 6.5;
+                        player.baseJump = -11.5;
                         startSafeMode(5);
                     }
                     
-                    if (difficultyTier === 2) {
+                    let oldTier = difficultyTier;
+                    if (!level4Active) {
+                        if (score >= 2000 && difficultyTier === 1) {
+                            difficultyTier = 2;
+                            currentSpeed = 5.8;
+                            player.baseJump = -11.0;
+                            startSafeMode(5);
+                        } else if (score >= 1000 && difficultyTier === 0) {
+                            difficultyTier = 1;
+                            currentSpeed = 3.8;
+                            startSafeMode(5);
+                        }
+                    }
+                    
+                    if (level4Active) {
+                        currentSpeed = 6.5 + Math.floor((score - 100000) / 50000) * 0.2;
+                        if (currentSpeed > 7.5) currentSpeed = 7.5;
+                    } else if (difficultyTier === 2) {
                         currentSpeed = 5.8 + Math.floor((score - 2000) / 400) * 0.3;
                         if (currentSpeed > 7.2) currentSpeed = 7.2;
                     } else if (difficultyTier === 1) {
@@ -447,6 +738,7 @@
                     h.collected = true;
                     health = Math.min(100, health + 50);
                     updateUI();
+                    playSound('health');
                 }
                 if (h.x + h.radius < 0 || h.collected) { healthItems.splice(i, 1); i--; }
             }
@@ -460,7 +752,11 @@
                 v.shake = Math.sin(Date.now() * 0.015 + i) * 2;
                 if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
                     v.active = true;
-                    health = Math.max(0, health - 10);
+                    let dmg = (level4Active && v.level4) ? 30 : 10;
+                    health = Math.max(0, health - dmg);
+                    if (level4Active && v.level4) {
+                        score = Math.max(0, score - 100);
+                    }
                     updateUI();
                     hitBlinkCounter = 14;
                     playSound('hit');
@@ -478,7 +774,11 @@
                 v.shake = Math.sin(Date.now() * 0.015 + i) * 3;
                 if (!v.active && player.x < v.x + v.width && player.x + player.width > v.x && player.y + player.height > v.y && player.y < v.y + v.height) {
                     v.active = true;
-                    health = Math.max(0, health - 30);
+                    let dmg = (level4Active && v.level4) ? 30 : 30;
+                    health = Math.max(0, health - dmg);
+                    if (level4Active && v.level4) {
+                        score = Math.max(0, score - 100);
+                    }
                     updateUI();
                     hitBlinkCounter = 14;
                     playSound('hit');
@@ -536,8 +836,8 @@
             if (gameState !== "playing") return;
             paused = !paused;
             if (paused) {
-                document.getElementById('pauseCurrentScore').innerText = score;
-                document.getElementById('pauseHighScore').innerText = highScore;
+                document.getElementById('pauseCurrentScore').innerText = score.toLocaleString();
+                document.getElementById('pauseHighScore').innerText = highScore.toLocaleString();
                 document.getElementById('pauseOverlay').style.display = 'flex';
             } else {
                 document.getElementById('pauseOverlay').style.display = 'none';
@@ -553,10 +853,11 @@
             }
         }
 
+        // Crisp 2D Infinity Symbol Drawing
         function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
-            if (isGlowing) { ctx.shadowBlur = 15; ctx.shadowColor = shadowColor; }
+            if (isGlowing) { ctx.shadowBlur = 12; ctx.shadowColor = shadowColor; }
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
@@ -578,31 +879,10 @@
             }
         }
 
-        function drawGreenHealth(x, y, size) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00ff00';
-            ctx.beginPath();
-            ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.fillStyle = '#00ff00';
-            ctx.fill();
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.ellipse(-size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
-            ctx.ellipse(size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
-            ctx.fill();
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.restore();
-            ctx.font = `bold ${size-4}px monospace`;
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText('+50%', x-15, y-12);
-        }
-
+        // Professional 2D Gift Box (Black + Red Ribbon)
         function drawGiftBox(x, y) {
             ctx.save();
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 6;
             ctx.shadowColor = '#ff0000';
             ctx.fillStyle = '#1a1a1a';
             ctx.fillRect(x-12, y-12, 24, 24);
@@ -624,11 +904,35 @@
             ctx.restore();
         }
 
-        function drawVirus(x, y, shake, isBlack = false) {
+        // Green Health Item
+        function drawGreenHealth(x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#00ff00';
+            ctx.beginPath();
+            ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
+            ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
+            ctx.fillStyle = '#00ff00';
+            ctx.fill();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.ellipse(-size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
+            ctx.ellipse(size*0.4, 0, size*0.2, size*0.12, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.restore();
+            ctx.font = `bold ${size-4}px monospace`;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('+50%', x-15, y-12);
+        }
+
+        // Virus Drawing (Red, Deep Red, Black)
+        function drawVirus(x, y, shake, isBlack = false, isDeepRed = false) {
             ctx.save();
             ctx.translate(x + shake, y);
-            let mainColor = isBlack ? '#1a1a1a' : '#8b0000';
-            let innerColor = isBlack ? '#333333' : '#ff4444';
+            let mainColor = isBlack ? '#1a1a1a' : (isDeepRed ? '#8b0000' : '#8b0000');
+            let innerColor = isBlack ? '#333333' : (isDeepRed ? '#cc0000' : '#ff4444');
             ctx.fillStyle = mainColor;
             ctx.beginPath();
             ctx.arc(9, 10, 9, 0, Math.PI*2);
@@ -662,6 +966,7 @@
             ctx.restore();
         }
 
+        // 2D Anime Character (Blue hair, sky blue outfit, ∞ on chest)
         function drawPlayer() {
             let x = player.x, y = player.y;
             let legOffset = Math.sin(Date.now() * 0.012) * 4;
@@ -672,57 +977,69 @@
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
             
+            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
             ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
             ctx.fill();
             
+            // Legs (dark blue pants)
             ctx.fillStyle = '#1a3a5a';
             ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
             ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
             
+            // Shoes
             ctx.fillStyle = '#0a2a3a';
             ctx.fillRect(x+3, y+38, 9, 5);
             ctx.fillRect(x+18, y+38, 9, 5);
             
+            // Body (sky blue outfit)
             let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
             gradBody.addColorStop(0, '#3b82f6');
             gradBody.addColorStop(1, '#1a4a8a');
             ctx.fillStyle = gradBody;
             ctx.fillRect(x+5, y+12, 20, 22);
             
+            // Infinity symbol on chest
             drawInfinity(x+15, y+22, 7, null, true, '#3b82f6', '#3b82f6');
             
+            // Arms (sky blue)
             ctx.fillStyle = '#3b82f6';
             ctx.fillRect(x-4 + armOffset, y+16, 7, 8);
             ctx.fillRect(x+27 - armOffset, y+16, 7, 8);
             
+            // Hands
             ctx.fillStyle = '#1a3a5a';
             ctx.fillRect(x-5 + armOffset, y+22, 4, 4);
             ctx.fillRect(x+31 - armOffset, y+22, 4, 4);
             
+            // Head base
             ctx.fillStyle = '#2a5a8a';
             ctx.fillRect(x+6, y+2, 18, 14);
             
-            ctx.fillStyle = '#0a1a2a';
-            ctx.fillRect(x+8, y+7, 6, 3);
-            ctx.fillRect(x+16, y+7, 6, 3);
-            
+            // Blue spiky hair
             ctx.fillStyle = '#3b82f6';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = '#3b82f6';
-            ctx.fillRect(x+9, y+8, 4, 2);
-            ctx.fillRect(x+17, y+8, 4, 2);
+            ctx.fillRect(x+4, y-2, 22, 6);
+            ctx.fillRect(x+6, y-5, 18, 5);
+            ctx.fillRect(x+8, y-8, 14, 4);
+            // Hair spikes
+            ctx.fillRect(x+4, y-1, 4, 4);
+            ctx.fillRect(x+22, y-1, 4, 4);
+            ctx.fillRect(x+10, y-7, 4, 4);
+            ctx.fillRect(x+16, y-7, 4, 4);
             
-            ctx.fillStyle = '#f5a623';
-            ctx.fillRect(x+4, y+4, 22, 3);
+            // Eyes (simple, visible)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x+8, y+6, 4, 3);
+            ctx.fillRect(x+18, y+6, 4, 3);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x+9, y+7, 2, 2);
+            ctx.fillRect(x+19, y+7, 2, 2);
             
-            ctx.fillStyle = '#1a3a5a';
-            ctx.beginPath();
-            ctx.moveTo(x+22, y+14);
-            ctx.lineTo(x+28, y+28);
-            ctx.lineTo(x+22, y+26);
-            ctx.fill();
+            // Determined expression (eyebrows)
+            ctx.fillStyle = '#1a2a4a';
+            ctx.fillRect(x+7, y+4, 5, 2);
+            ctx.fillRect(x+18, y+4, 5, 2);
             
             ctx.restore();
         }
@@ -752,10 +1069,11 @@
         }
 
         function drawViruses() {
-            for (let v of viruses) drawVirus(v.x, v.y, v.shake, false);
-            for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true);
+            for (let v of viruses) drawVirus(v.x, v.y, v.shake, false, v.deepRed);
+            for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false);
         }
 
+        // Dark space background with large glowing planet and HUGE INFINITE BEING
         let planetsQueue = [
             { x: -150, y: 120, size: 80, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true },
             { x: -150, y: 280, size: 95, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false },
@@ -822,6 +1140,42 @@
             }
         }
 
+        // HUGE INFINITE BEING (Human Form) in Background
+        function drawHugeInfiniteBeing() {
+            ctx.save();
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#3b82f6';
+            ctx.globalAlpha = 0.35;
+            
+            // Body silhouette
+            ctx.fillStyle = '#3b82f6';
+            // Head
+            ctx.beginPath();
+            ctx.arc(W/2, H/2 - 40, 35, 0, Math.PI * 2);
+            ctx.fill();
+            // Body
+            ctx.fillRect(W/2 - 30, H/2 - 5, 60, 80);
+            // Arms
+            ctx.fillRect(W/2 - 55, H/2 - 5, 25, 50);
+            ctx.fillRect(W/2 + 30, H/2 - 5, 25, 50);
+            // Infinity symbol on chest (large)
+            drawInfinity(W/2, H/2 + 15, 18, null, true, '#3b82f6', '#3b82f6');
+            // Glowing eyes
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(W/2 - 15, H/2 - 45, 5, 0, Math.PI * 2);
+            ctx.arc(W/2 + 15, H/2 - 45, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(W/2 - 15, H/2 - 45, 3, 0, Math.PI * 2);
+            ctx.arc(W/2 + 15, H/2 - 45, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
         let stars = [];
         for (let i = 0; i < 150; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
         let bgInfinity = [];
@@ -841,6 +1195,7 @@
                 if (s.x < 0) s.x = W;
             }
             drawPlanets();
+            drawHugeInfiniteBeing();
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.15;
@@ -857,10 +1212,9 @@
             gameRunning = false;
             gameState = "gameOver";
             playSound('gameover');
-            document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalScore').innerText = score.toLocaleString();
             document.getElementById('gameOver').style.display = 'block';
             document.getElementById('score').style.display = 'none';
-            document.getElementById('topText').style.display = 'none';
             document.getElementById('healthBarContainer').style.display = 'none';
             document.getElementById('pauseBtn').style.display = 'none';
             document.getElementById('jumpBtn').style.display = 'none';
@@ -869,19 +1223,18 @@
         }
 
         function restartGame() { startGame(); }
-        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('topText').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
-        function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score} IFC\n🔧 Smart contract deployment coming soon!`); }
+        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
+        function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
+        // 2D Upgraded Startup Menu
         function drawMenu() {
             drawBackground();
             
-            // Title
             ctx.font = 'bold 28px monospace';
             ctx.fillStyle = '#3b82f6';
             ctx.shadowBlur = 10;
             ctx.fillText('INFINITE JUMPER', W/2-115, H/4 - 10);
             
-            // Centered professional text
             ctx.font = '11px monospace';
             ctx.fillStyle = '#cbd5e1';
             ctx.fillText('COLLECT INFINITY COINS | AVOID VIRUSES', W/2-135, H/4 + 20);
@@ -889,36 +1242,31 @@
             ctx.font = '10px monospace';
             ctx.fillText('DOUBLE JUMP | SURVIVE | EARN IFC', W/2-105, H/4 + 38);
             
-            // Menu box
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 0;
             ctx.fillRect(W/2-100, H/2 - 40, 200, 170);
             ctx.strokeStyle = '#3b82f6';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.strokeRect(W/2-100, H/2 - 40, 200, 170);
             
-            // Daily Bonus button
             ctx.fillStyle = dailyBonusAvailable ? '#f5a623' : '#3b82f6';
             ctx.fillRect(W/2-80, H/2 - 25, 160, 30);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 12px monospace';
             ctx.fillText(dailyBonusAvailable ? '🎁 DAILY BONUS' : '✓ BONUS CLAIMED', W/2-60, H/2 - 5);
             
-            // Start Game button
             ctx.fillStyle = '#3b82f6';
             ctx.fillRect(W/2-80, H/2 + 15, 160, 32);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 13px monospace';
             ctx.fillText('▶ START GAME', W/2-55, H/2 + 36);
             
-            // Connect Wallet button
             ctx.fillStyle = '#3b82f6';
             ctx.fillRect(W/2-80, H/2 + 57, 160, 28);
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 11px monospace';
             ctx.fillText('🔗 CONNECT WALLET', W/2-65, H/2 + 76);
             
-            // Sound button
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(W/2-50, H/2 + 95, 100, 24);
             ctx.fillStyle = '#3b82f6';
