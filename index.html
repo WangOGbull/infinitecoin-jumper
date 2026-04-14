@@ -299,7 +299,7 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Background image (your infinite being image)
+        // Background image (your infinite being image) - only used in game scene
         const bgImage = new Image();
         bgImage.src = "https://i.imgur.com/GGE9r7I.jpeg";
         let bgImageLoaded = false;
@@ -1091,16 +1091,16 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Moving planets (on top of background)
+        // Moving planets - transparent, lower position, slightly larger
         let planetsQueue = [
-            { x: -150, y: 120, size: 80, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true },
-            { x: -150, y: 280, size: 95, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false },
-            { x: -150, y: 400, size: 70, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', active: false },
-            { x: -150, y: 500, size: 85, color1: '#ec4899', color2: '#be185d', ring: false, active: false },
-            { x: -150, y: 180, size: 75, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', active: false }
+            { x: -150, y: 140, size: 90, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true, alpha: 0.4 },
+            { x: -150, y: 300, size: 105, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false, alpha: 0.4 },
+            { x: -150, y: 420, size: 80, color1: '#f59e0b', color2: '#b45309', ring: true, ringColor: '#fbbf24', active: false, alpha: 0.4 },
+            { x: -150, y: 520, size: 95, color1: '#ec4899', color2: '#be185d', ring: false, active: false, alpha: 0.4 },
+            { x: -150, y: 200, size: 85, color1: '#06b6d4', color2: '#0891b2', ring: true, ringColor: '#67e8f9', active: false, alpha: 0.4 }
         ];
         let currentPlanetIndex = 0;
-        let planetSpeed = 1.2;
+        let planetSpeed = 1.0;
         
         function updatePlanets() {
             let activePlanet = planetsQueue[currentPlanetIndex];
@@ -1120,9 +1120,9 @@
             for (let p of planetsQueue) {
                 if (!p.active) continue;
                 ctx.save();
-                ctx.shadowBlur = 25;
+                ctx.shadowBlur = 20;
                 ctx.shadowColor = p.color1;
-                ctx.globalAlpha = 0.75;
+                ctx.globalAlpha = p.alpha || 0.4;
                 let grad = ctx.createLinearGradient(p.x - 20, p.y - 20, p.x + 20, p.y + 20);
                 grad.addColorStop(0, p.color1);
                 grad.addColorStop(1, p.color2);
@@ -1131,18 +1131,18 @@
                 ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
                 if (p.ring) {
-                    ctx.globalAlpha = 0.5;
+                    ctx.globalAlpha = (p.alpha || 0.4) * 0.7;
                     ctx.fillStyle = p.ringColor;
                     ctx.beginPath();
                     ctx.ellipse(p.x, p.y, p.size + 18, p.size * 0.25, Math.PI / 4, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.globalAlpha = 0.3;
+                    ctx.globalAlpha = (p.alpha || 0.4) * 0.4;
                     ctx.beginPath();
                     ctx.ellipse(p.x, p.y, p.size + 28, p.size * 0.3, Math.PI / 4, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 if (!p.ring) {
-                    ctx.globalAlpha = 0.4;
+                    ctx.globalAlpha = (p.alpha || 0.4) * 0.6;
                     ctx.fillStyle = '#000000';
                     ctx.beginPath();
                     ctx.arc(p.x - 18, p.y - 12, p.size * 0.12, 0, Math.PI * 2);
@@ -1164,9 +1164,12 @@
         for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
-            // Draw your image as the background (the infinite being is in the image)
+            // Draw your image as the background with reduced brightness (darker)
             if (bgImageLoaded) {
+                ctx.save();
+                ctx.globalAlpha = 0.65; // Reduced brightness / more transparent
                 ctx.drawImage(bgImage, 0, 0, W, H);
+                ctx.restore();
             } else {
                 // Fallback gradient if image not loaded
                 let grad = ctx.createLinearGradient(0, 0, 0, H);
@@ -1214,18 +1217,20 @@
         function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
-        // 2D Upgraded Startup Menu
+        // Startup Menu - NO background image (dark gradient only)
         function drawMenu() {
-            // Draw background with your image
-            if (bgImageLoaded) {
-                ctx.drawImage(bgImage, 0, 0, W, H);
-            } else {
-                let grad = ctx.createLinearGradient(0, 0, 0, H);
-                grad.addColorStop(0, '#0a0a2a');
-                grad.addColorStop(0.5, '#15153a');
-                grad.addColorStop(1, '#1a1a3a');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, W, H);
+            // Dark gradient background (no image)
+            let grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#0a0a2a');
+            grad.addColorStop(0.5, '#15153a');
+            grad.addColorStop(1, '#1a1a3a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+            
+            // Stars for menu background
+            for (let s of stars) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * 0.5})`;
+                ctx.fillRect(s.x, s.y, s.size, s.size);
             }
             
             ctx.font = 'bold 28px monospace';
