@@ -299,11 +299,12 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Background image (your image)
+        // Background image (your infinite being image)
         const bgImage = new Image();
-        bgImage.src = "https://i.imgur.com/7kZqo0K.jpeg"; // Replace with your actual image URL
+        bgImage.src = "https://i.imgur.com/GGE9r7I.jpeg";
         let bgImageLoaded = false;
         bgImage.onload = () => { bgImageLoaded = true; };
+        bgImage.onerror = () => { console.log("Background image failed to load"); };
 
         // Professional Space Sounds (Web Audio)
         let soundEnabled = true;
@@ -545,7 +546,6 @@
             if (!virusSpawnEnabled) return;
             if (level4Active) {
                 let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
-                let sizeMultiplier = 2;
                 if (colorType === 'black') {
                     blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
                 } else {
@@ -565,7 +565,6 @@
             for (let i = 0; i < count; i++) {
                 if (level4Active) {
                     let colorType = Math.random() > 0.5 ? 'deepred' : 'black';
-                    let sizeMultiplier = 2;
                     if (colorType === 'black') {
                         blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 28, width: 36, height: 40, active: false, shake: 0, level4: true, moveTowardPlayer: true });
                     } else {
@@ -754,7 +753,6 @@
             for (let i = 0; i < viruses.length; i++) {
                 let v = viruses[i];
                 if (v.moveTowardPlayer && level4Active) {
-                    // Move toward player when close
                     let dx = player.x - v.x;
                     if (Math.abs(dx) < 80) {
                         v.x += (dx > 0 ? 1.5 : -1.5);
@@ -1093,7 +1091,7 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Dark space background with large glowing planet and HUGE INFINITE BEING
+        // Moving planets (on top of background)
         let planetsQueue = [
             { x: -150, y: 120, size: 80, color1: '#8b5cf6', color2: '#6d28d9', ring: true, ringColor: '#c084fc', active: true },
             { x: -150, y: 280, size: 95, color1: '#3b82f6', color2: '#1e40af', ring: false, active: false },
@@ -1160,49 +1158,13 @@
             }
         }
 
-        // HUGE INFINITE BEING (Human Form) in Background
-        function drawHugeInfiniteBeing() {
-            ctx.save();
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#3b82f6';
-            ctx.globalAlpha = 0.35;
-            
-            // Body silhouette
-            ctx.fillStyle = '#3b82f6';
-            // Head
-            ctx.beginPath();
-            ctx.arc(W/2, H/2 - 40, 35, 0, Math.PI * 2);
-            ctx.fill();
-            // Body
-            ctx.fillRect(W/2 - 30, H/2 - 5, 60, 80);
-            // Arms
-            ctx.fillRect(W/2 - 55, H/2 - 5, 25, 50);
-            ctx.fillRect(W/2 + 30, H/2 - 5, 25, 50);
-            // Infinity symbol on chest (large)
-            drawInfinity(W/2, H/2 + 15, 18, null, true, '#3b82f6', '#3b82f6');
-            // Glowing eyes
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.arc(W/2 - 15, H/2 - 45, 5, 0, Math.PI * 2);
-            ctx.arc(W/2 + 15, H/2 - 45, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#3b82f6';
-            ctx.beginPath();
-            ctx.arc(W/2 - 15, H/2 - 45, 3, 0, Math.PI * 2);
-            ctx.arc(W/2 + 15, H/2 - 45, 3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
         let stars = [];
         for (let i = 0; i < 150; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, size: Math.random() * 2, alpha: 0.3 + Math.random() * 0.7 });
         let bgInfinity = [];
         for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
-            // Draw your custom image as the base background
+            // Draw your image as the background (the infinite being is in the image)
             if (bgImageLoaded) {
                 ctx.drawImage(bgImage, 0, 0, W, H);
             } else {
@@ -1222,7 +1184,6 @@
                 if (s.x < 0) s.x = W;
             }
             drawPlanets();
-            drawHugeInfiniteBeing();
             for (let b of bgInfinity) {
                 ctx.save();
                 ctx.globalAlpha = 0.15;
