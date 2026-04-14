@@ -299,7 +299,14 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Background image (your new image)
+        // Character image (dark silhouette with cyan eyes)
+        const charImage = new Image();
+        charImage.src = "https://i.postimg.cc/WzhJ7JFH/5976430122212462121.jpg";
+        let charImageLoaded = false;
+        charImage.onload = () => { charImageLoaded = true; };
+        charImage.onerror = () => { console.log("Character image failed to load"); };
+
+        // Background image (your cosmic infinite being image)
         const bgImage = new Image();
         bgImage.src = "https://i.postimg.cc/PrG8sJBr/5976645751045558267.jpg";
         let bgImageLoaded = false;
@@ -415,7 +422,7 @@
         let difficultyTier = 0;
         let virusCount = 0;
         let consecutiveDodges = 0;
-        let giftBoxSpawned = false;
+        let giftBoxesCollectedInTier = {1:0, 2:0}; // Track gift boxes collected per tier (max 3)
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
         let virusSpawnEnabled = true;
         let safeModeTimer = 0;
@@ -442,15 +449,55 @@
             }
         }
         
+        function getGiftBoxReward() {
+            if (level4Active) return 30000;
+            if (difficultyTier >= 3) return 25000;
+            if (difficultyTier === 2) {
+                let boxesCollected = giftBoxesCollectedInTier[2] || 0;
+                if (boxesCollected < 3) return 2000;
+            }
+            if (difficultyTier === 1) {
+                let boxesCollected = giftBoxesCollectedInTier[1] || 0;
+                if (boxesCollected < 3) return 1000;
+            }
+            return 0;
+        }
+        
+        function canSpawnGiftBox() {
+            if (level4Active) return true;
+            if (difficultyTier === 3) return true;
+            if (difficultyTier === 2) {
+                let boxesCollected = giftBoxesCollectedInTier[2] || 0;
+                return boxesCollected < 3;
+            }
+            if (difficultyTier === 1) {
+                let boxesCollected = giftBoxesCollectedInTier[1] || 0;
+                return boxesCollected < 3;
+            }
+            return false;
+        }
+        
+        function recordGiftBoxCollected() {
+            if (level4Active) return;
+            if (difficultyTier === 3) return;
+            if (difficultyTier === 2) {
+                giftBoxesCollectedInTier[2] = (giftBoxesCollectedInTier[2] || 0) + 1;
+            }
+            if (difficultyTier === 1) {
+                giftBoxesCollectedInTier[1] = (giftBoxesCollectedInTier[1] || 0) + 1;
+            }
+        }
+        
         function spawnGiftBox() {
+            // Spawn dangerously close to spikes (between them)
+            let baseX = 320 + Math.random() * 160;
             giftBox = {
-                x: 350 + Math.random() * 150,
-                y: GROUND_Y - 60 - Math.random() * 50,
+                x: baseX,
+                y: GROUND_Y - 60 - Math.random() * 40,
                 width: 20,
                 height: 20,
                 collected: false
             };
-            giftBoxSpawned = true;
         }
         
         function startSafeMode(seconds) {
@@ -509,7 +556,7 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
-        // Player
+        // Player hitbox (same size as before)
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -529,10 +576,11 @@
         let healthItems = [];
 
         function getCoinValue() {
-            if (level4Active) return Math.floor(Math.random() * 61) + 40;
-            if (difficultyTier >= 2) return Math.floor(Math.random() * 61) + 40;
-            if (difficultyTier >= 1) return Math.floor(Math.random() * 21) + 10;
-            return Math.floor(Math.random() * 16) + 5;
+            if (level4Active) return Math.floor(Math.random() * 151) + 150; // 150-300
+            if (difficultyTier >= 3) return Math.floor(Math.random() * 101) + 80; // 80-180
+            if (difficultyTier >= 2) return Math.floor(Math.random() * 71) + 50; // 50-120
+            if (difficultyTier >= 1) return Math.floor(Math.random() * 41) + 20; // 20-60
+            return Math.floor(Math.random() * 31) + 10; // 10-40
         }
 
         function spawnCollectible() {
@@ -551,9 +599,25 @@
                 } else {
                     viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                 }
-            } else if (isBlack) {
-                blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+            } else if (difficultyTier >= 3) {
+                // Tier 3: 1 red + 3 black
+                if (isBlack) {
+                    blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                } else {
+                    viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                }
+            } else if (difficultyTier >= 2) {
+                // Tier 2: 2 red + 2 black
+                if (isBlack) {
+                    blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                } else {
+                    viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                }
+            } else if (difficultyTier >= 1) {
+                // Tier 1: 2 red
+                viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
             } else {
+                // Tier 0: 1 red
                 viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
             }
         }
@@ -570,8 +634,18 @@
                     } else {
                         viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                     }
-                } else if (isBlack) {
-                    blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                } else if (difficultyTier >= 3) {
+                    if (isBlack) {
+                        blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                    } else {
+                        viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                    }
+                } else if (difficultyTier >= 2) {
+                    if (isBlack) {
+                        blackViruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
+                    } else {
+                        viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
+                    }
                 } else {
                     viruses.push({ x: baseX + (i * spacing), y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
                 }
@@ -616,8 +690,8 @@
             level4Active = false;
             virusCount = 0;
             consecutiveDodges = 0;
-            giftBoxSpawned = false;
             giftBox = null;
+            giftBoxesCollectedInTier = {1:0, 2:0};
             collectibles = [];
             viruses = [];
             blackViruses = [];
@@ -677,17 +751,40 @@
                                 }
                             }, 1200);
                         }
+                    } else if (difficultyTier >= 3) {
+                        // Tier 3: 1 red + 3 black
+                        if (viruses.length < 2) spawnClusteredViruses(1, false);
+                        if (blackViruses.length < 4) spawnClusteredViruses(3, true);
                     } else if (difficultyTier >= 2) {
+                        // Tier 2: 2 red + 2 black
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
-                        if (blackViruses.length < 2) spawnClusteredViruses(2, true);
+                        if (blackViruses.length < 3) spawnClusteredViruses(2, true);
                     } else if (difficultyTier >= 1) {
+                        // Tier 1: 2 red
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
                     } else {
+                        // Tier 0: 1 red
                         if (viruses.length < 3) spawnVirus(false);
                     }
                     if (virusCount >= 6 && virusCount <= 8) {
                         spawnHealthItem();
                         virusCount = 0;
+                    }
+                    
+                    // Gift box spawn (Tier 1 and 2: up to 3 boxes, Tier 3 and Level 4: after 25 dodges)
+                    if (canSpawnGiftBox() && !giftBox && (level4Active || difficultyTier >= 3 || (difficultyTier >= 1 && virusCount % 15 === 0))) {
+                        if (level4Active || difficultyTier >= 3) {
+                            if (consecutiveDodges >= 25) {
+                                spawnGiftBox();
+                                consecutiveDodges = 0;
+                            }
+                        } else {
+                            // Tier 1 and 2: spawn randomly but limited to 3 per tier
+                            let boxesCollected = difficultyTier === 2 ? (giftBoxesCollectedInTier[2] || 0) : (giftBoxesCollectedInTier[1] || 0);
+                            if (boxesCollected < 3 && Math.random() < 0.15) {
+                                spawnGiftBox();
+                            }
+                        }
                     }
                 }
             }, 2600);
@@ -703,38 +800,43 @@
                     updateUI();
                     playSound('collect');
                     
-                    // Check for Level 4 activation at 100,000 IFC
+                    // Check for tier progression
+                    let oldTier = difficultyTier;
                     if (score >= 100000 && !level4Active) {
                         level4Active = true;
                         currentSpeed = 8.5;
                         player.baseJump = -12.0;
                         startSafeMode(5);
-                    }
-                    
-                    if (!level4Active) {
-                        if (score >= 2000 && difficultyTier === 1) {
-                            difficultyTier = 2;
-                            currentSpeed = 5.8;
-                            player.baseJump = -11.0;
-                            startSafeMode(5);
-                        } else if (score >= 1000 && difficultyTier === 0) {
-                            difficultyTier = 1;
-                            currentSpeed = 3.8;
-                            startSafeMode(5);
-                        }
+                    } else if (score >= 4000 && difficultyTier < 3 && !level4Active) {
+                        difficultyTier = 3;
+                        currentSpeed = 7.5;
+                        player.baseJump = -11.5;
+                        startSafeMode(5);
+                    } else if (score >= 2000 && difficultyTier < 2 && !level4Active) {
+                        difficultyTier = 2;
+                        currentSpeed = 6.2;
+                        player.baseJump = -11.0;
+                        startSafeMode(5);
+                    } else if (score >= 1000 && difficultyTier < 1 && !level4Active) {
+                        difficultyTier = 1;
+                        currentSpeed = 4.0;
+                        startSafeMode(5);
                     }
                     
                     if (level4Active) {
                         currentSpeed = 8.5 + Math.floor((score - 100000) / 50000) * 0.3;
                         if (currentSpeed > 9.5) currentSpeed = 9.5;
-                    } else if (difficultyTier === 2) {
-                        currentSpeed = 5.8 + Math.floor((score - 2000) / 400) * 0.3;
+                    } else if (difficultyTier >= 3) {
+                        currentSpeed = 7.5 + Math.floor((score - 4000) / 5000) * 0.2;
+                        if (currentSpeed > 8.5) currentSpeed = 8.5;
+                    } else if (difficultyTier >= 2) {
+                        currentSpeed = 6.2 + Math.floor((score - 2000) / 1000) * 0.2;
                         if (currentSpeed > 7.2) currentSpeed = 7.2;
-                    } else if (difficultyTier === 1) {
-                        currentSpeed = 3.8 + Math.floor((score - 1000) / 300) * 0.2;
-                        if (currentSpeed > 4.8) currentSpeed = 4.8;
+                    } else if (difficultyTier >= 1) {
+                        currentSpeed = 4.0 + Math.floor((score - 1000) / 500) * 0.2;
+                        if (currentSpeed > 5.5) currentSpeed = 5.5;
                     } else {
-                        currentSpeed = 2.5 + Math.floor(score / 50) * 0.3;
+                        currentSpeed = 2.5 + Math.floor(score / 100) * 0.2;
                         if (currentSpeed > 3.5) currentSpeed = 3.5;
                     }
                 }
@@ -747,14 +849,14 @@
             giftBox.x -= currentSpeed;
             if (!giftBox.collected && player.x < giftBox.x + giftBox.width && player.x + player.width > giftBox.x && player.y < giftBox.y + giftBox.height && player.y + player.height > giftBox.y) {
                 giftBox.collected = true;
-                score += 10000;
+                let reward = getGiftBoxReward();
+                score += reward;
                 updateUI();
                 playSound('bonus');
-                giftBoxSpawned = false;
+                recordGiftBoxCollected();
                 giftBox = null;
             }
             if (giftBox && giftBox.x + giftBox.width < 0) {
-                giftBoxSpawned = false;
                 giftBox = null;
             }
         }
@@ -832,12 +934,8 @@
                 if (v.x + v.width < 0) { blackViruses.splice(i, 1); i--; }
             }
             
-            if (anyVirusPassed && !giftBoxSpawned && virusSpawnEnabled) {
+            if (anyVirusPassed && !giftBox && (level4Active || difficultyTier >= 3)) {
                 consecutiveDodges++;
-                if (consecutiveDodges >= 25) {
-                    spawnGiftBox();
-                    consecutiveDodges = 0;
-                }
             }
         }
 
@@ -1014,13 +1112,11 @@
             ctx.restore();
         }
 
-        // 2D Anime Character (Blue hair, sky blue outfit, ∞ on chest)
+        // Draw character from image
         function drawPlayer() {
             let x = player.x, y = player.y;
-            let legOffset = Math.sin(Date.now() * 0.012) * 4;
-            let armOffset = Math.sin(Date.now() * 0.015) * 5;
-            let orbRotate = Date.now() * 0.008;
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
+            let bounce = Math.sin(Date.now() * 0.008) * 2;
             
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
@@ -1031,63 +1127,14 @@
             ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
             ctx.fill();
             
-            // Legs (dark blue pants)
-            ctx.fillStyle = '#1a3a5a';
-            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
-            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
-            
-            // Shoes
-            ctx.fillStyle = '#0a2a3a';
-            ctx.fillRect(x+3, y+38, 9, 5);
-            ctx.fillRect(x+18, y+38, 9, 5);
-            
-            // Body (sky blue outfit)
-            let gradBody = ctx.createLinearGradient(x+5, y+12, x+23, y+32);
-            gradBody.addColorStop(0, '#3b82f6');
-            gradBody.addColorStop(1, '#1a4a8a');
-            ctx.fillStyle = gradBody;
-            ctx.fillRect(x+5, y+12, 20, 22);
-            
-            // Infinity symbol on chest
-            drawInfinity(x+15, y+22, 7, null, true, '#3b82f6', '#3b82f6');
-            
-            // Arms (sky blue)
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(x-4 + armOffset, y+16, 7, 8);
-            ctx.fillRect(x+27 - armOffset, y+16, 7, 8);
-            
-            // Hands
-            ctx.fillStyle = '#1a3a5a';
-            ctx.fillRect(x-5 + armOffset, y+22, 4, 4);
-            ctx.fillRect(x+31 - armOffset, y+22, 4, 4);
-            
-            // Head base
-            ctx.fillStyle = '#2a5a8a';
-            ctx.fillRect(x+6, y+2, 18, 14);
-            
-            // Blue spiky hair
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(x+4, y-2, 22, 6);
-            ctx.fillRect(x+6, y-5, 18, 5);
-            ctx.fillRect(x+8, y-8, 14, 4);
-            // Hair spikes
-            ctx.fillRect(x+4, y-1, 4, 4);
-            ctx.fillRect(x+22, y-1, 4, 4);
-            ctx.fillRect(x+10, y-7, 4, 4);
-            ctx.fillRect(x+16, y-7, 4, 4);
-            
-            // Eyes (simple, visible)
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x+8, y+6, 4, 3);
-            ctx.fillRect(x+18, y+6, 4, 3);
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(x+9, y+7, 2, 2);
-            ctx.fillRect(x+19, y+7, 2, 2);
-            
-            // Determined expression (eyebrows)
-            ctx.fillStyle = '#1a2a4a';
-            ctx.fillRect(x+7, y+4, 5, 2);
-            ctx.fillRect(x+18, y+4, 5, 2);
+            // Draw character image
+            if (charImageLoaded) {
+                ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
+            } else {
+                // Fallback if image not loaded
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(x, y, player.width, player.height);
+            }
             
             ctx.restore();
         }
@@ -1121,7 +1168,7 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Moving planets - Game theme colors (blue/purple/cyan), transparent
+        // Moving planets - Game theme colors (blue/purple/cyan), transparent, lower position
         let planetsQueue = [
             { x: -150, y: 140, size: 90, color1: '#3b82f6', color2: '#1e40af', ring: true, ringColor: '#60a5fa', active: true, alpha: 0.4 },
             { x: -150, y: 300, size: 105, color1: '#8b5cf6', color2: '#6d28d9', ring: false, active: false, alpha: 0.4 },
@@ -1194,14 +1241,13 @@
         for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
-            // Draw your image as the background with reduced brightness (darker)
+            // Draw your image as the background with reduced brightness
             if (bgImageLoaded) {
                 ctx.save();
-                ctx.globalAlpha = 0.65; // Reduced brightness / more transparent
+                ctx.globalAlpha = 0.65;
                 ctx.drawImage(bgImage, 0, 0, W, H);
                 ctx.restore();
             } else {
-                // Fallback gradient if image not loaded
                 let grad = ctx.createLinearGradient(0, 0, 0, H);
                 grad.addColorStop(0, '#0a0a2a');
                 grad.addColorStop(0.5, '#15153a');
@@ -1249,7 +1295,6 @@
 
         // Startup Menu - NO background image (dark gradient only)
         function drawMenu() {
-            // Dark gradient background (no image)
             let grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#0a0a2a');
             grad.addColorStop(0.5, '#15153a');
@@ -1257,7 +1302,6 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, W, H);
             
-            // Stars for menu background
             for (let s of stars) {
                 ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * 0.5})`;
                 ctx.fillRect(s.x, s.y, s.size, s.size);
@@ -1333,7 +1377,7 @@
                 drawCollectibles(); 
                 drawHealthItems(); 
                 drawViruses(); 
-                if (giftBox && !giftBox.collected) drawGiftBox(giftBox.x, giftBox.y);
+                if (giftBox) drawGiftBox(giftBox.x, giftBox.y);
                 drawPlayer(); 
             } 
         }
