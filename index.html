@@ -96,27 +96,28 @@
             display: none;
         }
         
+        /* FIXED JUMP BUTTON - Always visible, centered at bottom */
         .ctrl-btn {
-            position: absolute;
-            bottom: -50px;
+            position: fixed;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             border: 3px solid #3b82f6;
             color: #3b82f6;
             font-weight: bold;
             cursor: pointer;
             backdrop-filter: blur(8px);
-            z-index: 20;
-            display: none;
+            z-index: 999;
             touch-action: manipulation;
             font-size: 36px;
-            padding: 8px 28px;
+            padding: 10px 32px;
             border-radius: 60px;
             width: auto;
             text-align: center;
-            box-shadow: 0 0 15px rgba(59,130,246,0.3);
+            box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
+            display: block !important;
         }
         .ctrl-btn:active {
             background: #3b82f6;
@@ -294,7 +295,13 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Character image (your dark silhouette with glowing eyes) - 48x54
+        // Force Telegram to expand viewport (fixes button visibility)
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.expand();
+            window.Telegram.WebApp.ready();
+        }
+
+        // Character image
         const charImage = new Image();
         charImage.src = "https://i.postimg.cc/KjykLvS0/Adobe-Express-file.png";
         let charImageLoaded = false;
@@ -424,16 +431,13 @@
         let safeModeTimer = 0;
         let safeModeActive = false;
         
-        // Level 4 tracking
         let level4Active = false;
         
-        // Gift box tracking per tier
         let giftBoxesCollected = {1:0, 2:0, 3:0, 4:0};
         let giftBoxCooldown = 0;
         
         let giftBox = null;
         
-        // IFC font size management
         function updateScoreFont() {
             const scoreEl = document.getElementById('score');
             if (!scoreEl) return;
@@ -523,7 +527,6 @@
             }, 1000);
         }
         
-        // Daily bonus (24-hour cooldown)
         let dailyBonusAvailable = false;
         let dailyBonusClaimed = false;
         
@@ -560,7 +563,6 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
-        // Player hitbox - LARGER (48x54)
         let player = { x: 100, y: 0, vy: 0, width: 48, height: 54, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -1084,7 +1086,6 @@
             ctx.restore();
         }
 
-        // Draw character - CLEAN (no extra limbs), just your image with animations
         function drawPlayer() {
             let x = player.x, y = player.y;
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
@@ -1094,22 +1095,18 @@
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
             
-            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
             ctx.ellipse(x+24, y+50, 18, 6, 0, 0, Math.PI*2);
             ctx.fill();
             
-            // Apply jump squash/stretch
             ctx.translate(x+24, y+27);
             ctx.scale(1, jumpSquash);
             ctx.translate(-(x+24), -(y+27));
             
-            // Draw character image (clean, no extra shapes)
             if (charImageLoaded) {
                 ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
             } else {
-                // Fallback
                 ctx.fillStyle = '#3b82f6';
                 ctx.fillRect(x, y, player.width, player.height);
             }
