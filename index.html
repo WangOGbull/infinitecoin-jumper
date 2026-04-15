@@ -294,7 +294,7 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Character image (your dark silhouette with glowing eyes) - 3x larger (48x54)
+        // Character image (your dark silhouette with glowing eyes) - 48x54
         const charImage = new Image();
         charImage.src = "https://i.postimg.cc/KjykLvS0/Adobe-Express-file.png";
         let charImageLoaded = false;
@@ -1084,13 +1084,12 @@
             ctx.restore();
         }
 
-        // Draw character - LARGER (48x54) with running animation (leg/arm movement illusion)
+        // Draw character - CLEAN (no extra limbs), just your image with animations
         function drawPlayer() {
             let x = player.x, y = player.y;
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
             let bounce = Math.sin(Date.now() * 0.008) * 2;
             let jumpSquash = !player.grounded && player.vy < 0 ? 1.1 : (player.vy > 5 ? 0.9 : 1);
-            let runOffset = (player.grounded && Math.abs(player.vy) < 0.1) ? Math.sin(Date.now() * 0.02) * 3 : 0;
             
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
@@ -1106,23 +1105,9 @@
             ctx.scale(1, jumpSquash);
             ctx.translate(-(x+24), -(y+27));
             
-            // Draw character image (larger)
+            // Draw character image (clean, no extra shapes)
             if (charImageLoaded) {
-                // Add slight shift for running effect
-                let shiftX = runOffset;
-                ctx.drawImage(charImage, x + shiftX, y + bounce, player.width, player.height);
-                // Draw extra leg/arm lines for running effect
-                if (player.grounded && Math.abs(player.vy) < 0.1) {
-                    ctx.fillStyle = '#0a0a1a';
-                    let legSwing = Math.sin(Date.now() * 0.02) * 4;
-                    // Left leg
-                    ctx.fillRect(x + 10 + legSwing, y + 42, 6, 12);
-                    // Right leg
-                    ctx.fillRect(x + 32 - legSwing, y + 42, 6, 12);
-                    // Arms
-                    ctx.fillRect(x + 6 - legSwing, y + 20, 5, 12);
-                    ctx.fillRect(x + 37 + legSwing, y + 20, 5, 12);
-                }
+                ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
             } else {
                 // Fallback
                 ctx.fillStyle = '#3b82f6';
