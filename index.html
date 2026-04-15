@@ -96,7 +96,7 @@
             display: none;
         }
         
-        /* FIXED JUMP BUTTON - Always visible, centered at bottom */
+        /* JUMP BUTTON - Fixed at bottom center, visible ONLY during gameplay */
         .ctrl-btn {
             position: fixed;
             bottom: 20px;
@@ -117,7 +117,7 @@
             text-align: center;
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
-            display: block !important;
+            display: none;
         }
         .ctrl-btn:active {
             background: #3b82f6;
@@ -295,7 +295,7 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Force Telegram to expand viewport (fixes button visibility)
+        // Force Telegram to expand viewport
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.ready();
@@ -1263,7 +1263,18 @@
         }
 
         function restartGame() { startGame(); }
-        function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
+        function exitToMenu() { 
+            gameState = "menu"; 
+            gameRunning = false; 
+            document.getElementById('score').style.display = 'none';
+            document.getElementById('topText').style.display = 'none';
+            document.getElementById('healthBarContainer').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('jumpBtn').style.display = 'none';
+            document.querySelector('.game-footer').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('pauseOverlay').style.display = 'none';
+        }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
         function drawMenu() {
