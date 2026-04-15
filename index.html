@@ -96,11 +96,48 @@
             display: none;
         }
         
-        /* JUMP BUTTON - Inside container, directly under canvas */
-        .ctrl-btn {
-            display: block;
-            width: 80px;
-            margin: 12px auto 0 auto;
+        /* Button container - below ground */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 12px;
+            gap: 10px;
+        }
+        
+        /* Left buttons group */
+        .left-buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* 2D Upgraded Buttons */
+        .action-btn {
+            background: rgba(0,0,0,0.8);
+            border: 3px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+            font-size: 28px;
+            padding: 8px 20px;
+            border-radius: 60px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(59,130,246,0.5);
+            font-family: monospace;
+            display: inline-block;
+            transition: all 0.05s ease;
+            min-width: 70px;
+        }
+        .action-btn:active {
+            background: #3b82f6;
+            color: #000;
+            transform: scale(0.96);
+        }
+        
+        /* Jump button - right side */
+        .jump-btn {
             background: rgba(0,0,0,0.8);
             border: 3px solid #3b82f6;
             color: #3b82f6;
@@ -108,17 +145,22 @@
             cursor: pointer;
             touch-action: manipulation;
             font-size: 36px;
-            padding: 8px 0;
+            padding: 6px 32px;
             border-radius: 60px;
             text-align: center;
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
-            display: none;
+            transition: all 0.05s ease;
         }
-        .ctrl-btn:active {
+        .jump-btn:active {
             background: #3b82f6;
             color: #000;
             transform: scale(0.96);
+        }
+        
+        /* Hide buttons initially */
+        .game-buttons {
+            display: none;
         }
         
         #gameOver {
@@ -258,7 +300,18 @@
     <div id="healthBarContainer"><div id="healthBar"></div></div>
     <div id="pauseBtn">⏸️</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
-    <button class="ctrl-btn" id="jumpBtn">∞</button>
+    
+    <!-- Game Buttons - Below ground -->
+    <div class="game-buttons" id="gameButtons">
+        <div class="button-container">
+            <div class="left-buttons">
+                <button class="action-btn" id="leftBtn">◀</button>
+                <button class="action-btn" id="rightBtn">▶</button>
+            </div>
+            <button class="jump-btn" id="jumpBtn">∞</button>
+        </div>
+    </div>
+    
     <div id="pauseOverlay">
         <div class="pause-title">⏸️ GAME PAUSED</div>
         <div class="pause-stats">💰 CURRENT IFC: <span id="pauseCurrentScore">0</span></div>
@@ -434,6 +487,39 @@
         
         let giftBox = null;
         
+        // Daily bonus - 24 hour cooldown fix
+        let dailyBonusAvailable = false;
+        let dailyBonusClaimed = false;
+        
+        function checkDailyBonus() {
+            const lastClaim = localStorage.getItem('lastPlayedTimestamp');
+            if (!lastClaim) {
+                dailyBonusAvailable = true;
+                dailyBonusClaimed = false;
+            } else {
+                const hoursSince = (Date.now() - parseInt(lastClaim)) / (1000 * 60 * 60);
+                if (hoursSince >= 24) {
+                    dailyBonusAvailable = true;
+                    dailyBonusClaimed = false;
+                } else {
+                    dailyBonusAvailable = false;
+                    dailyBonusClaimed = true;
+                }
+            }
+        }
+        
+        function claimDailyBonus() {
+            if (!dailyBonusAvailable) return false;
+            const bonus = 500;
+            score += bonus;
+            updateUI();
+            dailyBonusAvailable = false;
+            dailyBonusClaimed = true;
+            localStorage.setItem('lastPlayedTimestamp', Date.now());
+            alert(`✦ DAILY BONUS CLAIMED! +${bonus} IFC ✦`);
+            return true;
+        }
+        
         function updateScoreFont() {
             const scoreEl = document.getElementById('score');
             if (!scoreEl) return;
@@ -522,43 +608,12 @@
                 }
             }, 1000);
         }
-        
-        let dailyBonusAvailable = false;
-        let dailyBonusClaimed = false;
-        
-        function checkDailyBonus() {
-            const lastClaim = localStorage.getItem('lastPlayedTimestamp');
-            if (!lastClaim) {
-                dailyBonusAvailable = true;
-                dailyBonusClaimed = false;
-            } else {
-                const hoursSince = (Date.now() - parseInt(lastClaim)) / (1000 * 60 * 60);
-                if (hoursSince >= 24) {
-                    dailyBonusAvailable = true;
-                    dailyBonusClaimed = false;
-                } else {
-                    dailyBonusAvailable = false;
-                    dailyBonusClaimed = true;
-                }
-            }
-        }
-        
-        function claimDailyBonus() {
-            if (!dailyBonusAvailable) return false;
-            const bonus = 500;
-            score += bonus;
-            updateUI();
-            dailyBonusAvailable = false;
-            dailyBonusClaimed = true;
-            localStorage.setItem('lastPlayedTimestamp', Date.now());
-            alert(`✦ DAILY BONUS CLAIMED! +${bonus} IFC ✦`);
-            return true;
-        }
 
         function connectWallet() {
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
+        // Player with horizontal movement
         let player = { x: 100, y: 0, vy: 0, width: 48, height: 54, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -698,17 +753,17 @@
             blackViruses = [];
             healthItems = [];
             player.baseJump = -9.5;
+            player.x = 100;
             initGround();
             player.y = GROUND_Y - player.height;
             player.vy = 0;
             player.grounded = true;
             player.doubleJumpUsed = false;
-            player.x = 100;
             
             document.getElementById('score').style.display = 'block';
             document.getElementById('healthBarContainer').style.display = 'block';
             document.getElementById('pauseBtn').style.display = 'block';
-            document.getElementById('jumpBtn').style.display = 'block';
+            document.getElementById('gameButtons').style.display = 'block';
             document.getElementById('gameOver').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'block';
             document.getElementById('pauseOverlay').style.display = 'none';
@@ -927,9 +982,23 @@
                     break;
                 }
             }
+            // Horizontal boundaries
             if (player.x < 30) player.x = 30;
             if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
             if (hitBlinkCounter > 0) hitBlinkCounter--;
+        }
+
+        // Horizontal movement controls
+        function moveLeft() {
+            if (!gameRunning || paused) return;
+            player.x -= 18;
+            if (player.x < 30) player.x = 30;
+        }
+        
+        function moveRight() {
+            if (!gameRunning || paused) return;
+            player.x += 18;
+            if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
         }
 
         function jump() {
@@ -1253,7 +1322,7 @@
             document.getElementById('score').style.display = 'none';
             document.getElementById('healthBarContainer').style.display = 'none';
             document.getElementById('pauseBtn').style.display = 'none';
-            document.getElementById('jumpBtn').style.display = 'none';
+            document.getElementById('gameButtons').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
         }
@@ -1265,7 +1334,7 @@
             document.getElementById('score').style.display = 'none';
             document.getElementById('healthBarContainer').style.display = 'none';
             document.getElementById('pauseBtn').style.display = 'none';
-            document.getElementById('jumpBtn').style.display = 'none';
+            document.getElementById('gameButtons').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
@@ -1365,6 +1434,7 @@
         initGround();
         animate();
 
+        // Menu click handlers
         canvas.addEventListener('click', (e) => { 
             if (gameState !== "menu") return; 
             const rect = canvas.getBoundingClientRect(); 
@@ -1407,8 +1477,13 @@
             } 
         });
 
-        document.getElementById('jumpBtn').onclick = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
-        document.getElementById('jumpBtn').ontouchstart = (e) => { e.preventDefault(); if (gameState === "playing" && !paused) jump(); };
+        // Button event listeners
+        document.getElementById('leftBtn').addEventListener('click', (e) => { e.preventDefault(); moveLeft(); });
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft(); });
+        document.getElementById('rightBtn').addEventListener('click', (e) => { e.preventDefault(); moveRight(); });
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveRight(); });
+        document.getElementById('jumpBtn').addEventListener('click', (e) => { e.preventDefault(); jump(); });
+        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
         
         document.getElementById('gameoverRestartBtn').onclick = () => restartGame();
         document.getElementById('gameoverClaimBtn').onclick = () => claimGameOverIFC();
@@ -1428,6 +1503,8 @@
         
         window.onkeydown = (e) => { 
             if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } 
+            if (e.code === 'ArrowLeft') { e.preventDefault(); if (gameState === "playing" && !paused) moveLeft(); }
+            if (e.code === 'ArrowRight') { e.preventDefault(); if (gameState === "playing" && !paused) moveRight(); }
             if (e.code === 'KeyP' && gameState === "playing") togglePause(); 
             if (e.code === 'KeyM') { toggleSound(); if (gameState === "menu") drawMenu(); }
         };
