@@ -106,13 +106,11 @@
             gap: 10px;
         }
         
-        /* Left buttons group */
         .left-buttons {
             display: flex;
             gap: 15px;
         }
         
-        /* 2D Upgraded Buttons */
         .action-btn {
             background: rgba(0,0,0,0.8);
             border: 3px solid #3b82f6;
@@ -127,8 +125,6 @@
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
             display: inline-block;
-            transition: all 0.05s ease;
-            min-width: 70px;
         }
         .action-btn:active {
             background: #3b82f6;
@@ -136,7 +132,6 @@
             transform: scale(0.96);
         }
         
-        /* Jump button - right side */
         .jump-btn {
             background: rgba(0,0,0,0.8);
             border: 3px solid #3b82f6;
@@ -150,7 +145,6 @@
             text-align: center;
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
-            transition: all 0.05s ease;
         }
         .jump-btn:active {
             background: #3b82f6;
@@ -158,7 +152,6 @@
             transform: scale(0.96);
         }
         
-        /* Hide buttons initially */
         .game-buttons {
             display: none;
         }
@@ -301,7 +294,6 @@
     <div id="pauseBtn">⏸️</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     
-    <!-- Game Buttons - Below ground -->
     <div class="game-buttons" id="gameButtons">
         <div class="button-container">
             <div class="left-buttons">
@@ -344,7 +336,6 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Force Telegram to expand viewport
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.ready();
@@ -487,7 +478,7 @@
         
         let giftBox = null;
         
-        // Daily bonus - 24 hour cooldown fix
+        // Daily bonus - 24 hours exact
         let dailyBonusAvailable = false;
         let dailyBonusClaimed = false;
         
@@ -613,7 +604,6 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
-        // Player with horizontal movement
         let player = { x: 100, y: 0, vy: 0, width: 48, height: 54, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -982,13 +972,11 @@
                     break;
                 }
             }
-            // Horizontal boundaries
             if (player.x < 30) player.x = 30;
             if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
             if (hitBlinkCounter > 0) hitBlinkCounter--;
         }
 
-        // Horizontal movement controls
         function moveLeft() {
             if (!gameRunning || paused) return;
             player.x -= 18;
@@ -1434,7 +1422,6 @@
         initGround();
         animate();
 
-        // Menu click handlers
         canvas.addEventListener('click', (e) => { 
             if (gameState !== "menu") return; 
             const rect = canvas.getBoundingClientRect(); 
@@ -1477,7 +1464,6 @@
             } 
         });
 
-        // Button event listeners
         document.getElementById('leftBtn').addEventListener('click', (e) => { e.preventDefault(); moveLeft(); });
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft(); });
         document.getElementById('rightBtn').addEventListener('click', (e) => { e.preventDefault(); moveRight(); });
