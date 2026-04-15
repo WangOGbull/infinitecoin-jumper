@@ -294,7 +294,7 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Character image (your dark silhouette with glowing eyes)
+        // Character image (your dark silhouette with glowing eyes) - 3x larger (48x54)
         const charImage = new Image();
         charImage.src = "https://i.postimg.cc/KjykLvS0/Adobe-Express-file.png";
         let charImageLoaded = false;
@@ -479,7 +479,6 @@
         
         function spawnGiftBox() {
             if (!canSpawnGiftBox()) return;
-            // Spawn in normal position (like regular collectibles)
             let x = 250 + Math.random() * 200;
             let y = GROUND_Y - 40 - Math.random() * 50;
             giftBox = {
@@ -490,7 +489,7 @@
                 collected: false,
                 reward: getGiftBoxReward()
             };
-            giftBoxCooldown = 300; // cooldown frames before next spawn
+            giftBoxCooldown = 300;
         }
         
         function recordGiftBoxCollected() {
@@ -561,8 +560,8 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
-        // Player hitbox
-        let player = { x: 100, y: 0, vy: 0, width: 32, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
+        // Player hitbox - LARGER (48x54)
+        let player = { x: 100, y: 0, vy: 0, width: 48, height: 54, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
         const GROUND_Y = H - 60;
@@ -769,14 +768,12 @@
                         virusCount = 0;
                     }
                     
-                    // Random gift box spawn (10% chance when eligible)
                     if (canSpawnGiftBox() && Math.random() < 0.1) {
                         spawnGiftBox();
                     }
                 }
             }, 2600);
             
-            // Gift box cooldown decrement
             setInterval(() => {
                 if (giftBoxCooldown > 0) giftBoxCooldown--;
             }, 100);
@@ -792,7 +789,6 @@
                     updateUI();
                     playSound('collect');
                     
-                    let oldTier = difficultyTier;
                     if (score >= 100000 && !level4Active) {
                         level4Active = true;
                         currentSpeed = 8.5;
@@ -972,7 +968,6 @@
             }
         }
 
-        // Crisp 2D Infinity Symbol Drawing - Brighter, Neo Blue Glow
         function drawInfinity(x, y, size, value, isGlowing = true, color = '#3b82f6', shadowColor = '#3b82f6') {
             ctx.save();
             ctx.translate(x, y);
@@ -1001,7 +996,6 @@
             }
         }
 
-        // Professional 2D Gift Box (Black + Red Ribbon)
         function drawGiftBox(x, y) {
             ctx.save();
             ctx.shadowBlur = 6;
@@ -1026,7 +1020,6 @@
             ctx.restore();
         }
 
-        // Lemon Green Health Item (bright, clear)
         function drawGreenHealth(x, y, size) {
             ctx.save();
             ctx.translate(x, y);
@@ -1051,7 +1044,6 @@
             ctx.shadowBlur = 0;
         }
 
-        // Virus Drawing
         function drawVirus(x, y, shake, isBlack = false, isDeepRed = false, isLevel4 = false) {
             ctx.save();
             ctx.translate(x + shake, y);
@@ -1092,12 +1084,13 @@
             ctx.restore();
         }
 
-        // Draw character from your image with animations
+        // Draw character - LARGER (48x54) with running animation (leg/arm movement illusion)
         function drawPlayer() {
             let x = player.x, y = player.y;
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
             let bounce = Math.sin(Date.now() * 0.008) * 2;
             let jumpSquash = !player.grounded && player.vy < 0 ? 1.1 : (player.vy > 5 ? 0.9 : 1);
+            let runOffset = (player.grounded && Math.abs(player.vy) < 0.1) ? Math.sin(Date.now() * 0.02) * 3 : 0;
             
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
@@ -1105,19 +1098,33 @@
             // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
-            ctx.ellipse(x+16, y+42, 14, 5, 0, 0, Math.PI*2);
+            ctx.ellipse(x+24, y+50, 18, 6, 0, 0, Math.PI*2);
             ctx.fill();
             
             // Apply jump squash/stretch
-            ctx.translate(x+16, y+18);
+            ctx.translate(x+24, y+27);
             ctx.scale(1, jumpSquash);
-            ctx.translate(-(x+16), -(y+18));
+            ctx.translate(-(x+24), -(y+27));
             
-            // Draw character image
+            // Draw character image (larger)
             if (charImageLoaded) {
-                ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
+                // Add slight shift for running effect
+                let shiftX = runOffset;
+                ctx.drawImage(charImage, x + shiftX, y + bounce, player.width, player.height);
+                // Draw extra leg/arm lines for running effect
+                if (player.grounded && Math.abs(player.vy) < 0.1) {
+                    ctx.fillStyle = '#0a0a1a';
+                    let legSwing = Math.sin(Date.now() * 0.02) * 4;
+                    // Left leg
+                    ctx.fillRect(x + 10 + legSwing, y + 42, 6, 12);
+                    // Right leg
+                    ctx.fillRect(x + 32 - legSwing, y + 42, 6, 12);
+                    // Arms
+                    ctx.fillRect(x + 6 - legSwing, y + 20, 5, 12);
+                    ctx.fillRect(x + 37 + legSwing, y + 20, 5, 12);
+                }
             } else {
-                // Fallback if image not loaded
+                // Fallback
                 ctx.fillStyle = '#3b82f6';
                 ctx.fillRect(x, y, player.width, player.height);
             }
@@ -1154,7 +1161,6 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Moving planets
         let planetsQueue = [
             { x: -150, y: 140, size: 90, color1: '#3b82f6', color2: '#1e40af', ring: true, ringColor: '#60a5fa', active: true, alpha: 0.4 },
             { x: -150, y: 300, size: 105, color1: '#8b5cf6', color2: '#6d28d9', ring: false, active: false, alpha: 0.4 },
@@ -1278,7 +1284,6 @@
         function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
-        // Startup Menu
         function drawMenu() {
             let grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#0a0a2a');
