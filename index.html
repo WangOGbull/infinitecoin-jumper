@@ -37,7 +37,6 @@
             background: #0a0a2a;
         }
         
-        /* UI Layout - Health bar below IFC */
         #score {
             position: absolute;
             top: 12px;
@@ -55,7 +54,6 @@
             white-space: nowrap;
         }
         
-        /* Dynamic font size for IFC */
         .score-small { font-size: 16px; }
         .score-medium { font-size: 14px; }
         .score-large { font-size: 12px; }
@@ -81,7 +79,6 @@
             transition: width 0.2s ease;
         }
         
-        /* Pause button - top right */
         #pauseBtn {
             position: absolute;
             top: 12px;
@@ -99,7 +96,6 @@
             display: none;
         }
         
-        /* Jump button - 2D upgraded ∞ logo */
         .ctrl-btn {
             position: absolute;
             bottom: -50px;
@@ -183,7 +179,6 @@
             display: none;
         }
         
-        /* Pause Menu - 2D upgraded */
         #pauseOverlay {
             position: absolute;
             top: 0;
@@ -299,21 +294,14 @@
         canvas.width = W;
         canvas.height = H;
 
-        // Character image (dark silhouette with cyan eyes)
-        const charImage = new Image();
-        charImage.src = "https://i.postimg.cc/WzhJ7JFH/5976430122212462121.jpg";
-        let charImageLoaded = false;
-        charImage.onload = () => { charImageLoaded = true; };
-        charImage.onerror = () => { console.log("Character image failed to load"); };
-
-        // Background image (your cosmic infinite being image)
+        // Background image
         const bgImage = new Image();
         bgImage.src = "https://i.postimg.cc/PrG8sJBr/5976645751045558267.jpg";
         let bgImageLoaded = false;
         bgImage.onload = () => { bgImageLoaded = true; };
         bgImage.onerror = () => { console.log("Background image failed to load"); };
 
-        // Professional Space Sounds (Web Audio)
+        // Sound
         let soundEnabled = true;
         let audioContext = null;
         
@@ -422,7 +410,8 @@
         let difficultyTier = 0;
         let virusCount = 0;
         let consecutiveDodges = 0;
-        let giftBoxesCollectedInTier = {1:0, 2:0}; // Track gift boxes collected per tier (max 3)
+        let giftBoxSpawned = false;
+        let giftBoxRewardGiven = false;
         let highScore = localStorage.getItem('infiniteJumperHighScore') || 0;
         let virusSpawnEnabled = true;
         let safeModeTimer = 0;
@@ -430,6 +419,10 @@
         
         // Level 4 tracking
         let level4Active = false;
+        
+        // Gift box tracking per tier (max 3 boxes)
+        let giftBoxesCollected = {1:0, 2:0};
+        let giftBoxSpawnedForTier = false;
         
         let giftBox = null;
         
@@ -449,55 +442,65 @@
             }
         }
         
-        function getGiftBoxReward() {
-            if (level4Active) return 30000;
-            if (difficultyTier >= 3) return 25000;
-            if (difficultyTier === 2) {
-                let boxesCollected = giftBoxesCollectedInTier[2] || 0;
-                if (boxesCollected < 3) return 2000;
+        function checkAndSpawnGiftBox() {
+            // Tier 1 gift boxes (up to 3, each gives 1000 IFC, spawns at 500, 1000, 1500 IFC)
+            if (difficultyTier === 1 && !level4Active && !giftBox && giftBoxesCollected[1] < 3) {
+                let nextThreshold = 500 + (giftBoxesCollected[1] * 500);
+                if (score >= nextThreshold && !giftBoxSpawnedForTier) {
+                    giftBox = {
+                        x: 250 + Math.random() * 200,
+                        y: GROUND_Y - 40 - Math.random() * 50,
+                        width: 20,
+                        height: 20,
+                        collected: false,
+                        reward: 1000
+                    };
+                    giftBoxSpawnedForTier = true;
+                }
             }
-            if (difficultyTier === 1) {
-                let boxesCollected = giftBoxesCollectedInTier[1] || 0;
-                if (boxesCollected < 3) return 1000;
+            // Tier 2 gift boxes (up to 3, each gives 2000 IFC, spawns at 1000, 2000, 3000 IFC above 2000)
+            else if (difficultyTier === 2 && !level4Active && !giftBox && giftBoxesCollected[2] < 3) {
+                let nextThreshold = 2000 + 1000 + (giftBoxesCollected[2] * 1000);
+                if (score >= nextThreshold && !giftBoxSpawnedForTier) {
+                    giftBox = {
+                        x: 250 + Math.random() * 200,
+                        y: GROUND_Y - 40 - Math.random() * 50,
+                        width: 20,
+                        height: 20,
+                        collected: false,
+                        reward: 2000
+                    };
+                    giftBoxSpawnedForTier = true;
+                }
             }
-            return 0;
-        }
-        
-        function canSpawnGiftBox() {
-            if (level4Active) return true;
-            if (difficultyTier === 3) return true;
-            if (difficultyTier === 2) {
-                let boxesCollected = giftBoxesCollectedInTier[2] || 0;
-                return boxesCollected < 3;
+            // Tier 3 gift box (25,000 IFC at 4,000 IFC)
+            else if (difficultyTier === 3 && !level4Active && !giftBox && !giftBoxRewardGiven) {
+                if (score >= 4000 && !giftBoxRewardGiven) {
+                    giftBox = {
+                        x: 250 + Math.random() * 200,
+                        y: GROUND_Y - 40 - Math.random() * 50,
+                        width: 20,
+                        height: 20,
+                        collected: false,
+                        reward: 25000
+                    };
+                    giftBoxRewardGiven = true;
+                }
             }
-            if (difficultyTier === 1) {
-                let boxesCollected = giftBoxesCollectedInTier[1] || 0;
-                return boxesCollected < 3;
+            // Level 4 gift box (30,000 IFC at 100,000 IFC)
+            else if (level4Active && !giftBox && !giftBoxRewardGiven) {
+                if (score >= 100000 && !giftBoxRewardGiven) {
+                    giftBox = {
+                        x: 250 + Math.random() * 200,
+                        y: GROUND_Y - 40 - Math.random() * 50,
+                        width: 20,
+                        height: 20,
+                        collected: false,
+                        reward: 30000
+                    };
+                    giftBoxRewardGiven = true;
+                }
             }
-            return false;
-        }
-        
-        function recordGiftBoxCollected() {
-            if (level4Active) return;
-            if (difficultyTier === 3) return;
-            if (difficultyTier === 2) {
-                giftBoxesCollectedInTier[2] = (giftBoxesCollectedInTier[2] || 0) + 1;
-            }
-            if (difficultyTier === 1) {
-                giftBoxesCollectedInTier[1] = (giftBoxesCollectedInTier[1] || 0) + 1;
-            }
-        }
-        
-        function spawnGiftBox() {
-            // Spawn dangerously close to spikes (between them)
-            let baseX = 320 + Math.random() * 160;
-            giftBox = {
-                x: baseX,
-                y: GROUND_Y - 60 - Math.random() * 40,
-                width: 20,
-                height: 20,
-                collected: false
-            };
         }
         
         function startSafeMode(seconds) {
@@ -556,7 +559,7 @@
             alert('🔧 SMART CONTRACT DEPLOYMENT SOON\n\nReal IFC wallet connection and payouts will be available after the smart contract is deployed.');
         }
 
-        // Player hitbox (same size as before)
+        // Player hitbox
         let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
@@ -576,11 +579,11 @@
         let healthItems = [];
 
         function getCoinValue() {
-            if (level4Active) return Math.floor(Math.random() * 151) + 150; // 150-300
-            if (difficultyTier >= 3) return Math.floor(Math.random() * 101) + 80; // 80-180
-            if (difficultyTier >= 2) return Math.floor(Math.random() * 71) + 50; // 50-120
-            if (difficultyTier >= 1) return Math.floor(Math.random() * 41) + 20; // 20-60
-            return Math.floor(Math.random() * 31) + 10; // 10-40
+            if (level4Active) return Math.floor(Math.random() * 151) + 150;
+            if (difficultyTier >= 3) return Math.floor(Math.random() * 101) + 80;
+            if (difficultyTier >= 2) return Math.floor(Math.random() * 71) + 50;
+            if (difficultyTier >= 1) return Math.floor(Math.random() * 41) + 20;
+            return Math.floor(Math.random() * 31) + 10;
         }
 
         function spawnCollectible() {
@@ -600,24 +603,20 @@
                     viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                 }
             } else if (difficultyTier >= 3) {
-                // Tier 3: 1 red + 3 black
                 if (isBlack) {
                     blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
                 } else {
                     viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
                 }
             } else if (difficultyTier >= 2) {
-                // Tier 2: 2 red + 2 black
                 if (isBlack) {
                     blackViruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 22, width: 24, height: 26, active: false, shake: 0 });
                 } else {
                     viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
                 }
             } else if (difficultyTier >= 1) {
-                // Tier 1: 2 red
                 viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
             } else {
-                // Tier 0: 1 red
                 viruses.push({ x: 350 + Math.random() * 200, y: GROUND_Y - 18, width: 18, height: 20, active: false, shake: 0 });
             }
         }
@@ -691,7 +690,10 @@
             virusCount = 0;
             consecutiveDodges = 0;
             giftBox = null;
-            giftBoxesCollectedInTier = {1:0, 2:0};
+            giftBoxSpawned = false;
+            giftBoxRewardGiven = false;
+            giftBoxSpawnedForTier = false;
+            giftBoxesCollected = {1:0, 2:0};
             collectibles = [];
             viruses = [];
             blackViruses = [];
@@ -726,7 +728,6 @@
                     virusCount++;
                     if (level4Active) {
                         if (viruses.length + blackViruses.length < 5) {
-                            // Level 4: 3 spikes pattern - first 2 together, third delayed
                             let colorType1 = Math.random() > 0.5 ? 'deepred' : 'black';
                             let colorType2 = Math.random() > 0.5 ? 'deepred' : 'black';
                             if (colorType1 === 'black') {
@@ -739,7 +740,6 @@
                             } else {
                                 viruses.push({ x: 380 + Math.random() * 150, y: GROUND_Y - 24, width: 28, height: 32, active: false, shake: 0, level4: true, deepRed: true, moveTowardPlayer: true });
                             }
-                            // Third spike delayed by 1-1.5 seconds
                             setTimeout(() => {
                                 if (gameRunning && !paused && virusSpawnEnabled) {
                                     let colorType3 = Math.random() > 0.5 ? 'deepred' : 'black';
@@ -752,39 +752,19 @@
                             }, 1200);
                         }
                     } else if (difficultyTier >= 3) {
-                        // Tier 3: 1 red + 3 black
                         if (viruses.length < 2) spawnClusteredViruses(1, false);
                         if (blackViruses.length < 4) spawnClusteredViruses(3, true);
                     } else if (difficultyTier >= 2) {
-                        // Tier 2: 2 red + 2 black
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
                         if (blackViruses.length < 3) spawnClusteredViruses(2, true);
                     } else if (difficultyTier >= 1) {
-                        // Tier 1: 2 red
                         if (viruses.length < 3) spawnClusteredViruses(2, false);
                     } else {
-                        // Tier 0: 1 red
                         if (viruses.length < 3) spawnVirus(false);
                     }
                     if (virusCount >= 6 && virusCount <= 8) {
                         spawnHealthItem();
                         virusCount = 0;
-                    }
-                    
-                    // Gift box spawn (Tier 1 and 2: up to 3 boxes, Tier 3 and Level 4: after 25 dodges)
-                    if (canSpawnGiftBox() && !giftBox && (level4Active || difficultyTier >= 3 || (difficultyTier >= 1 && virusCount % 15 === 0))) {
-                        if (level4Active || difficultyTier >= 3) {
-                            if (consecutiveDodges >= 25) {
-                                spawnGiftBox();
-                                consecutiveDodges = 0;
-                            }
-                        } else {
-                            // Tier 1 and 2: spawn randomly but limited to 3 per tier
-                            let boxesCollected = difficultyTier === 2 ? (giftBoxesCollectedInTier[2] || 0) : (giftBoxesCollectedInTier[1] || 0);
-                            if (boxesCollected < 3 && Math.random() < 0.15) {
-                                spawnGiftBox();
-                            }
-                        }
                     }
                 }
             }, 2600);
@@ -800,7 +780,6 @@
                     updateUI();
                     playSound('collect');
                     
-                    // Check for tier progression
                     let oldTier = difficultyTier;
                     if (score >= 100000 && !level4Active) {
                         level4Active = true;
@@ -812,15 +791,18 @@
                         currentSpeed = 7.5;
                         player.baseJump = -11.5;
                         startSafeMode(5);
+                        giftBoxSpawnedForTier = false;
                     } else if (score >= 2000 && difficultyTier < 2 && !level4Active) {
                         difficultyTier = 2;
                         currentSpeed = 6.2;
                         player.baseJump = -11.0;
                         startSafeMode(5);
+                        giftBoxSpawnedForTier = false;
                     } else if (score >= 1000 && difficultyTier < 1 && !level4Active) {
                         difficultyTier = 1;
                         currentSpeed = 4.0;
                         startSafeMode(5);
+                        giftBoxSpawnedForTier = false;
                     }
                     
                     if (level4Active) {
@@ -849,15 +831,21 @@
             giftBox.x -= currentSpeed;
             if (!giftBox.collected && player.x < giftBox.x + giftBox.width && player.x + player.width > giftBox.x && player.y < giftBox.y + giftBox.height && player.y + player.height > giftBox.y) {
                 giftBox.collected = true;
-                let reward = getGiftBoxReward();
-                score += reward;
+                score += giftBox.reward;
                 updateUI();
                 playSound('bonus');
-                recordGiftBoxCollected();
+                if (difficultyTier === 1 && giftBox.reward === 1000) {
+                    giftBoxesCollected[1]++;
+                    giftBoxSpawnedForTier = false;
+                } else if (difficultyTier === 2 && giftBox.reward === 2000) {
+                    giftBoxesCollected[2]++;
+                    giftBoxSpawnedForTier = false;
+                }
                 giftBox = null;
             }
             if (giftBox && giftBox.x + giftBox.width < 0) {
                 giftBox = null;
+                giftBoxSpawnedForTier = false;
             }
         }
 
@@ -876,7 +864,6 @@
         }
 
         function updateViruses() {
-            let anyVirusPassed = false;
             for (let i = 0; i < viruses.length; i++) {
                 let v = viruses[i];
                 if (v.moveTowardPlayer && level4Active) {
@@ -899,9 +886,6 @@
                     playSound('hit');
                     consecutiveDodges = 0;
                     if (health <= 0) gameOver();
-                }
-                if (v.x + v.width < 0 && !v.active) {
-                    anyVirusPassed = true;
                 }
                 if (v.x + v.width < 0) { viruses.splice(i, 1); i--; }
             }
@@ -928,14 +912,7 @@
                     consecutiveDodges = 0;
                     if (health <= 0) gameOver();
                 }
-                if (v.x + v.width < 0 && !v.active) {
-                    anyVirusPassed = true;
-                }
                 if (v.x + v.width < 0) { blackViruses.splice(i, 1); i--; }
-            }
-            
-            if (anyVirusPassed && !giftBox && (level4Active || difficultyTier >= 3)) {
-                consecutiveDodges++;
             }
         }
 
@@ -1046,16 +1023,16 @@
             ctx.restore();
         }
 
-        // Green Health Item - Brighter Neo Blue Glow style
+        // Lemon Green Health Item (bright, clear)
         function drawGreenHealth(x, y, size) {
             ctx.save();
             ctx.translate(x, y);
             ctx.shadowBlur = 18;
-            ctx.shadowColor = '#00ccff';
+            ctx.shadowColor = '#ccff00';
             ctx.beginPath();
             ctx.ellipse(-size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
             ctx.ellipse(size*0.4, 0, size*0.4, size*0.25, 0, 0, Math.PI*2);
-            ctx.fillStyle = '#00ccff';
+            ctx.fillStyle = '#ccff00';
             ctx.fill();
             ctx.globalCompositeOperation = 'destination-out';
             ctx.beginPath();
@@ -1071,7 +1048,7 @@
             ctx.shadowBlur = 0;
         }
 
-        // Virus Drawing (Red, Deep Red, Black) - Level 4 spikes are 2x larger
+        // Virus Drawing
         function drawVirus(x, y, shake, isBlack = false, isDeepRed = false, isLevel4 = false) {
             ctx.save();
             ctx.translate(x + shake, y);
@@ -1112,11 +1089,15 @@
             ctx.restore();
         }
 
-        // Draw character from image
+        // NEW ANIMATED CHARACTER (Dark silhouette, glowing eyes, moving arms/legs)
         function drawPlayer() {
             let x = player.x, y = player.y;
+            let isRunning = player.grounded && (Math.abs(player.vy) < 0.1) && player.vy === 0;
+            let legOffset = isRunning ? (Math.sin(Date.now() * 0.015) * 5) : 2;
+            let armOffset = isRunning ? (Math.sin(Date.now() * 0.018) * 6) : 0;
+            let bounce = !player.grounded ? 0 : (Math.sin(Date.now() * 0.01) * 1);
+            let jumpSquash = !player.grounded && player.vy < 0 ? 1.1 : (player.vy > 5 ? 0.9 : 1);
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
-            let bounce = Math.sin(Date.now() * 0.008) * 2;
             
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
@@ -1127,15 +1108,45 @@
             ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
             ctx.fill();
             
-            // Draw character image
-            if (charImageLoaded) {
-                ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
-            } else {
-                // Fallback if image not loaded
-                ctx.fillStyle = '#3b82f6';
-                ctx.fillRect(x, y, player.width, player.height);
-            }
+            // Apply jump squash/stretch
+            ctx.translate(x+14, y+20);
+            ctx.scale(1, jumpSquash);
+            ctx.translate(-(x+14), -(y+20));
             
+            // Body (dark silhouette)
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(x+5, y+12, 20, 24);
+            
+            // Head
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(x+6, y+2, 18, 14);
+            
+            // Glowing cyan eyes
+            ctx.fillStyle = '#00ffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#00ffff';
+            ctx.fillRect(x+9, y+6, 4, 3);
+            ctx.fillRect(x+17, y+6, 4, 3);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x+10, y+7, 2, 2);
+            ctx.fillRect(x+18, y+7, 2, 2);
+            
+            // Legs (moving when running)
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
+            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
+            
+            // Shoes
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(x+3, y+38, 9, 5);
+            ctx.fillRect(x+18, y+38, 9, 5);
+            
+            // Arms (swinging when running)
+            ctx.fillStyle = '#0a0a1a';
+            ctx.fillRect(x-3 + armOffset, y+16, 6, 8);
+            ctx.fillRect(x+27 - armOffset, y+16, 6, 8);
+            
+            ctx.shadowBlur = 0;
             ctx.restore();
         }
 
@@ -1168,7 +1179,7 @@
             for (let v of blackViruses) drawVirus(v.x, v.y, v.shake, true, false, v.level4);
         }
 
-        // Moving planets - Game theme colors (blue/purple/cyan), transparent, lower position
+        // Moving planets
         let planetsQueue = [
             { x: -150, y: 140, size: 90, color1: '#3b82f6', color2: '#1e40af', ring: true, ringColor: '#60a5fa', active: true, alpha: 0.4 },
             { x: -150, y: 300, size: 105, color1: '#8b5cf6', color2: '#6d28d9', ring: false, active: false, alpha: 0.4 },
@@ -1241,7 +1252,6 @@
         for (let i = 0; i < 6; i++) bgInfinity.push({ x: Math.random() * W, y: 30 + Math.random() * 200, size: 20 + Math.random() * 15, speed: 0.05 + Math.random() * 0.1 });
 
         function drawBackground() {
-            // Draw your image as the background with reduced brightness
             if (bgImageLoaded) {
                 ctx.save();
                 ctx.globalAlpha = 0.65;
@@ -1293,7 +1303,7 @@
         function exitToMenu() { gameState = "menu"; gameRunning = false; document.getElementById('score').style.display = 'none'; document.getElementById('healthBarContainer').style.display = 'none'; document.getElementById('pauseBtn').style.display = 'none'; document.getElementById('jumpBtn').style.display = 'none'; document.querySelector('.game-footer').style.display = 'none'; document.getElementById('gameOver').style.display = 'none'; document.getElementById('pauseOverlay').style.display = 'none'; }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
-        // Startup Menu - NO background image (dark gradient only)
+        // Startup Menu
         function drawMenu() {
             let grad = ctx.createLinearGradient(0, 0, 0, H);
             grad.addColorStop(0, '#0a0a2a');
@@ -1366,6 +1376,7 @@
                 updateHealthItems(); 
                 updateViruses(); 
                 updatePlanets();
+                checkAndSpawnGiftBox();
             } 
         }
         
