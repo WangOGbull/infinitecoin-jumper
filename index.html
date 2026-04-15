@@ -96,7 +96,7 @@
             display: none;
         }
         
-        /* Button container - below ground */
+        /* Button container - below ground, inside game container */
         .button-container {
             display: flex;
             justify-content: space-between;
@@ -125,6 +125,7 @@
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
             display: inline-block;
+            transition: all 0.05s ease;
         }
         .action-btn:active {
             background: #3b82f6;
@@ -145,6 +146,7 @@
             text-align: center;
             box-shadow: 0 0 15px rgba(59,130,246,0.5);
             font-family: monospace;
+            transition: all 0.05s ease;
         }
         .jump-btn:active {
             background: #3b82f6;
@@ -294,13 +296,14 @@
     <div id="pauseBtn">⏸️</div>
     <canvas id="gameCanvas" width="400" height="600"></canvas>
     
+    <!-- Game Buttons - Below ground, inside container -->
     <div class="game-buttons" id="gameButtons">
         <div class="button-container">
             <div class="left-buttons">
-                <button class="action-btn" id="leftBtn">◀</button>
-                <button class="action-btn" id="rightBtn">▶</button>
+                <button class="action-btn" id="leftBtn" touch-action="none">◀</button>
+                <button class="action-btn" id="rightBtn" touch-action="none">▶</button>
             </div>
-            <button class="jump-btn" id="jumpBtn">∞</button>
+            <button class="jump-btn" id="jumpBtn" touch-action="none">∞</button>
         </div>
     </div>
     
@@ -477,6 +480,11 @@
         let giftBoxCooldown = 0;
         
         let giftBox = null;
+        
+        // Hold movement variables
+        let leftPressed = false;
+        let rightPressed = false;
+        let moveInterval = null;
         
         // Daily bonus - 24 hours exact
         let dailyBonusAvailable = false;
@@ -715,6 +723,47 @@
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('infiniteJumperHighScore', highScore);
+            }
+        }
+
+        // Hold movement functions
+        function startMoveLeft() {
+            if (!gameRunning || paused) return;
+            leftPressed = true;
+            if (moveInterval) clearInterval(moveInterval);
+            moveInterval = setInterval(() => {
+                if (leftPressed && gameRunning && !paused) {
+                    player.x -= 12;
+                    if (player.x < 30) player.x = 30;
+                }
+            }, 50);
+        }
+        
+        function stopMoveLeft() {
+            leftPressed = false;
+            if (!rightPressed && moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+        }
+        
+        function startMoveRight() {
+            if (!gameRunning || paused) return;
+            rightPressed = true;
+            if (moveInterval) clearInterval(moveInterval);
+            moveInterval = setInterval(() => {
+                if (rightPressed && gameRunning && !paused) {
+                    player.x += 12;
+                    if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
+                }
+            }, 50);
+        }
+        
+        function stopMoveRight() {
+            rightPressed = false;
+            if (!leftPressed && moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
             }
         }
 
@@ -975,18 +1024,6 @@
             if (player.x < 30) player.x = 30;
             if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
             if (hitBlinkCounter > 0) hitBlinkCounter--;
-        }
-
-        function moveLeft() {
-            if (!gameRunning || paused) return;
-            player.x -= 18;
-            if (player.x < 30) player.x = 30;
-        }
-        
-        function moveRight() {
-            if (!gameRunning || paused) return;
-            player.x += 18;
-            if (player.x + player.width > W - 30) player.x = W - 30 - player.width;
         }
 
         function jump() {
@@ -1313,6 +1350,14 @@
             document.getElementById('gameButtons').style.display = 'none';
             document.querySelector('.game-footer').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
+            
+            // Stop any ongoing movement
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+            leftPressed = false;
+            rightPressed = false;
         }
 
         function restartGame() { startGame(); }
@@ -1326,6 +1371,14 @@
             document.querySelector('.game-footer').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
+            
+            // Stop any ongoing movement
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+            leftPressed = false;
+            rightPressed = false;
         }
         function claimGameOverIFC() { alert(`💰 TOTAL IFC EARNED: ${score.toLocaleString()} IFC\n🔧 Smart contract deployment coming soon!`); }
 
@@ -1464,10 +1517,24 @@
             } 
         });
 
-        document.getElementById('leftBtn').addEventListener('click', (e) => { e.preventDefault(); moveLeft(); });
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft(); });
-        document.getElementById('rightBtn').addEventListener('click', (e) => { e.preventDefault(); moveRight(); });
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveRight(); });
+        // Hold-to-move event listeners
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        
+        leftBtn.addEventListener('mousedown', startMoveLeft);
+        leftBtn.addEventListener('mouseup', stopMoveLeft);
+        leftBtn.addEventListener('mouseleave', stopMoveLeft);
+        leftBtn.addEventListener('touchstart', startMoveLeft);
+        leftBtn.addEventListener('touchend', stopMoveLeft);
+        leftBtn.addEventListener('touchcancel', stopMoveLeft);
+        
+        rightBtn.addEventListener('mousedown', startMoveRight);
+        rightBtn.addEventListener('mouseup', stopMoveRight);
+        rightBtn.addEventListener('mouseleave', stopMoveRight);
+        rightBtn.addEventListener('touchstart', startMoveRight);
+        rightBtn.addEventListener('touchend', stopMoveRight);
+        rightBtn.addEventListener('touchcancel', stopMoveRight);
+        
         document.getElementById('jumpBtn').addEventListener('click', (e) => { e.preventDefault(); jump(); });
         document.getElementById('jumpBtn').addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
         
@@ -1489,10 +1556,15 @@
         
         window.onkeydown = (e) => { 
             if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); if (gameState === "playing" && !paused) jump(); } 
-            if (e.code === 'ArrowLeft') { e.preventDefault(); if (gameState === "playing" && !paused) moveLeft(); }
-            if (e.code === 'ArrowRight') { e.preventDefault(); if (gameState === "playing" && !paused) moveRight(); }
+            if (e.code === 'ArrowLeft') { e.preventDefault(); if (gameState === "playing" && !paused) startMoveLeft(); }
+            if (e.code === 'ArrowRight') { e.preventDefault(); if (gameState === "playing" && !paused) startMoveRight(); }
             if (e.code === 'KeyP' && gameState === "playing") togglePause(); 
             if (e.code === 'KeyM') { toggleSound(); if (gameState === "menu") drawMenu(); }
+        };
+        
+        window.onkeyup = (e) => {
+            if (e.code === 'ArrowLeft') { stopMoveLeft(); }
+            if (e.code === 'ArrowRight') { stopMoveRight(); }
         };
         
         checkDailyBonus();
