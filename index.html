@@ -294,6 +294,13 @@
         canvas.width = W;
         canvas.height = H;
 
+        // Character image (your dark silhouette with glowing eyes)
+        const charImage = new Image();
+        charImage.src = "https://i.postimg.cc/KjykLvS0/Adobe-Express-file.png";
+        let charImageLoaded = false;
+        charImage.onload = () => { charImageLoaded = true; };
+        charImage.onerror = () => { console.log("Character image failed to load"); };
+
         // Background image
         const bgImage = new Image();
         bgImage.src = "https://i.postimg.cc/PrG8sJBr/5976645751045558267.jpg";
@@ -420,9 +427,9 @@
         // Level 4 tracking
         let level4Active = false;
         
-        // Gift box tracking per tier (max 3 boxes)
-        let giftBoxesCollected = {1:0, 2:0};
-        let giftBoxSpawnedForTier = false;
+        // Gift box tracking per tier
+        let giftBoxesCollected = {1:0, 2:0, 3:0, 4:0};
+        let giftBoxCooldown = 0;
         
         let giftBox = null;
         
@@ -442,64 +449,59 @@
             }
         }
         
-        function checkAndSpawnGiftBox() {
-            // Tier 1 gift boxes (up to 3, each gives 1000 IFC, spawns at 500, 1000, 1500 IFC)
-            if (difficultyTier === 1 && !level4Active && !giftBox && giftBoxesCollected[1] < 3) {
-                let nextThreshold = 500 + (giftBoxesCollected[1] * 500);
-                if (score >= nextThreshold && !giftBoxSpawnedForTier) {
-                    giftBox = {
-                        x: 250 + Math.random() * 200,
-                        y: GROUND_Y - 40 - Math.random() * 50,
-                        width: 20,
-                        height: 20,
-                        collected: false,
-                        reward: 1000
-                    };
-                    giftBoxSpawnedForTier = true;
-                }
-            }
-            // Tier 2 gift boxes (up to 3, each gives 2000 IFC, spawns at 1000, 2000, 3000 IFC above 2000)
-            else if (difficultyTier === 2 && !level4Active && !giftBox && giftBoxesCollected[2] < 3) {
-                let nextThreshold = 2000 + 1000 + (giftBoxesCollected[2] * 1000);
-                if (score >= nextThreshold && !giftBoxSpawnedForTier) {
-                    giftBox = {
-                        x: 250 + Math.random() * 200,
-                        y: GROUND_Y - 40 - Math.random() * 50,
-                        width: 20,
-                        height: 20,
-                        collected: false,
-                        reward: 2000
-                    };
-                    giftBoxSpawnedForTier = true;
-                }
-            }
-            // Tier 3 gift box (25,000 IFC at 4,000 IFC)
-            else if (difficultyTier === 3 && !level4Active && !giftBox && !giftBoxRewardGiven) {
-                if (score >= 4000 && !giftBoxRewardGiven) {
-                    giftBox = {
-                        x: 250 + Math.random() * 200,
-                        y: GROUND_Y - 40 - Math.random() * 50,
-                        width: 20,
-                        height: 20,
-                        collected: false,
-                        reward: 25000
-                    };
-                    giftBoxRewardGiven = true;
-                }
-            }
-            // Level 4 gift box (30,000 IFC at 100,000 IFC)
-            else if (level4Active && !giftBox && !giftBoxRewardGiven) {
-                if (score >= 100000 && !giftBoxRewardGiven) {
-                    giftBox = {
-                        x: 250 + Math.random() * 200,
-                        y: GROUND_Y - 40 - Math.random() * 50,
-                        width: 20,
-                        height: 20,
-                        collected: false,
-                        reward: 30000
-                    };
-                    giftBoxRewardGiven = true;
-                }
+        function getGiftBoxReward() {
+            if (level4Active) return 10000;
+            if (difficultyTier >= 3) return 5000;
+            if (difficultyTier === 2) return 1000;
+            if (difficultyTier === 1) return 500;
+            return 0;
+        }
+        
+        function getMaxGiftBoxes() {
+            if (level4Active) return 2;
+            if (difficultyTier >= 3) return 2;
+            if (difficultyTier === 2) return 3;
+            if (difficultyTier === 1) return 3;
+            return 0;
+        }
+        
+        function canSpawnGiftBox() {
+            if (giftBox) return false;
+            if (giftBoxCooldown > 0) return false;
+            let collected = 0;
+            if (level4Active) collected = giftBoxesCollected[4] || 0;
+            else if (difficultyTier >= 3) collected = giftBoxesCollected[3] || 0;
+            else if (difficultyTier === 2) collected = giftBoxesCollected[2] || 0;
+            else if (difficultyTier === 1) collected = giftBoxesCollected[1] || 0;
+            else return false;
+            return collected < getMaxGiftBoxes();
+        }
+        
+        function spawnGiftBox() {
+            if (!canSpawnGiftBox()) return;
+            // Spawn in normal position (like regular collectibles)
+            let x = 250 + Math.random() * 200;
+            let y = GROUND_Y - 40 - Math.random() * 50;
+            giftBox = {
+                x: x,
+                y: y,
+                width: 20,
+                height: 20,
+                collected: false,
+                reward: getGiftBoxReward()
+            };
+            giftBoxCooldown = 300; // cooldown frames before next spawn
+        }
+        
+        function recordGiftBoxCollected() {
+            if (level4Active) {
+                giftBoxesCollected[4] = (giftBoxesCollected[4] || 0) + 1;
+            } else if (difficultyTier >= 3) {
+                giftBoxesCollected[3] = (giftBoxesCollected[3] || 0) + 1;
+            } else if (difficultyTier === 2) {
+                giftBoxesCollected[2] = (giftBoxesCollected[2] || 0) + 1;
+            } else if (difficultyTier === 1) {
+                giftBoxesCollected[1] = (giftBoxesCollected[1] || 0) + 1;
             }
         }
         
@@ -560,7 +562,7 @@
         }
 
         // Player hitbox
-        let player = { x: 100, y: 0, vy: 0, width: 28, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
+        let player = { x: 100, y: 0, vy: 0, width: 32, height: 36, grounded: false, doubleJumpUsed: false, baseJump: -9.5 };
 
         let groundSegments = [];
         const GROUND_Y = H - 60;
@@ -692,8 +694,8 @@
             giftBox = null;
             giftBoxSpawned = false;
             giftBoxRewardGiven = false;
-            giftBoxSpawnedForTier = false;
-            giftBoxesCollected = {1:0, 2:0};
+            giftBoxCooldown = 0;
+            giftBoxesCollected = {1:0, 2:0, 3:0, 4:0};
             collectibles = [];
             viruses = [];
             blackViruses = [];
@@ -766,8 +768,18 @@
                         spawnHealthItem();
                         virusCount = 0;
                     }
+                    
+                    // Random gift box spawn (10% chance when eligible)
+                    if (canSpawnGiftBox() && Math.random() < 0.1) {
+                        spawnGiftBox();
+                    }
                 }
             }, 2600);
+            
+            // Gift box cooldown decrement
+            setInterval(() => {
+                if (giftBoxCooldown > 0) giftBoxCooldown--;
+            }, 100);
         }
 
         function updateCollectibles() {
@@ -791,18 +803,15 @@
                         currentSpeed = 7.5;
                         player.baseJump = -11.5;
                         startSafeMode(5);
-                        giftBoxSpawnedForTier = false;
                     } else if (score >= 2000 && difficultyTier < 2 && !level4Active) {
                         difficultyTier = 2;
                         currentSpeed = 6.2;
                         player.baseJump = -11.0;
                         startSafeMode(5);
-                        giftBoxSpawnedForTier = false;
                     } else if (score >= 1000 && difficultyTier < 1 && !level4Active) {
                         difficultyTier = 1;
                         currentSpeed = 4.0;
                         startSafeMode(5);
-                        giftBoxSpawnedForTier = false;
                     }
                     
                     if (level4Active) {
@@ -834,18 +843,12 @@
                 score += giftBox.reward;
                 updateUI();
                 playSound('bonus');
-                if (difficultyTier === 1 && giftBox.reward === 1000) {
-                    giftBoxesCollected[1]++;
-                    giftBoxSpawnedForTier = false;
-                } else if (difficultyTier === 2 && giftBox.reward === 2000) {
-                    giftBoxesCollected[2]++;
-                    giftBoxSpawnedForTier = false;
-                }
+                recordGiftBoxCollected();
                 giftBox = null;
+                giftBoxCooldown = 200;
             }
             if (giftBox && giftBox.x + giftBox.width < 0) {
                 giftBox = null;
-                giftBoxSpawnedForTier = false;
             }
         }
 
@@ -1089,15 +1092,12 @@
             ctx.restore();
         }
 
-        // NEW ANIMATED CHARACTER (Dark silhouette, glowing eyes, moving arms/legs)
+        // Draw character from your image with animations
         function drawPlayer() {
             let x = player.x, y = player.y;
-            let isRunning = player.grounded && (Math.abs(player.vy) < 0.1) && player.vy === 0;
-            let legOffset = isRunning ? (Math.sin(Date.now() * 0.015) * 5) : 2;
-            let armOffset = isRunning ? (Math.sin(Date.now() * 0.018) * 6) : 0;
-            let bounce = !player.grounded ? 0 : (Math.sin(Date.now() * 0.01) * 1);
-            let jumpSquash = !player.grounded && player.vy < 0 ? 1.1 : (player.vy > 5 ? 0.9 : 1);
             let blink = hitBlinkCounter > 0 && (Math.floor(hitBlinkCounter / 2) % 2 === 0);
+            let bounce = Math.sin(Date.now() * 0.008) * 2;
+            let jumpSquash = !player.grounded && player.vy < 0 ? 1.1 : (player.vy > 5 ? 0.9 : 1);
             
             ctx.save();
             if (blink) { ctx.globalAlpha = 0.4; ctx.shadowBlur = 20; ctx.shadowColor = '#ffffff'; }
@@ -1105,48 +1105,23 @@
             // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
-            ctx.ellipse(x+14, y+42, 12, 5, 0, 0, Math.PI*2);
+            ctx.ellipse(x+16, y+42, 14, 5, 0, 0, Math.PI*2);
             ctx.fill();
             
             // Apply jump squash/stretch
-            ctx.translate(x+14, y+20);
+            ctx.translate(x+16, y+18);
             ctx.scale(1, jumpSquash);
-            ctx.translate(-(x+14), -(y+20));
+            ctx.translate(-(x+16), -(y+18));
             
-            // Body (dark silhouette)
-            ctx.fillStyle = '#0a0a1a';
-            ctx.fillRect(x+5, y+12, 20, 24);
+            // Draw character image
+            if (charImageLoaded) {
+                ctx.drawImage(charImage, x, y + bounce, player.width, player.height);
+            } else {
+                // Fallback if image not loaded
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(x, y, player.width, player.height);
+            }
             
-            // Head
-            ctx.fillStyle = '#0a0a1a';
-            ctx.fillRect(x+6, y+2, 18, 14);
-            
-            // Glowing cyan eyes
-            ctx.fillStyle = '#00ffff';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = '#00ffff';
-            ctx.fillRect(x+9, y+6, 4, 3);
-            ctx.fillRect(x+17, y+6, 4, 3);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(x+10, y+7, 2, 2);
-            ctx.fillRect(x+18, y+7, 2, 2);
-            
-            // Legs (moving when running)
-            ctx.fillStyle = '#0a0a1a';
-            ctx.fillRect(x+5, y+28, 7, 10 + legOffset);
-            ctx.fillRect(x+18, y+28, 7, 10 - legOffset);
-            
-            // Shoes
-            ctx.fillStyle = '#050510';
-            ctx.fillRect(x+3, y+38, 9, 5);
-            ctx.fillRect(x+18, y+38, 9, 5);
-            
-            // Arms (swinging when running)
-            ctx.fillStyle = '#0a0a1a';
-            ctx.fillRect(x-3 + armOffset, y+16, 6, 8);
-            ctx.fillRect(x+27 - armOffset, y+16, 6, 8);
-            
-            ctx.shadowBlur = 0;
             ctx.restore();
         }
 
@@ -1376,7 +1351,6 @@
                 updateHealthItems(); 
                 updateViruses(); 
                 updatePlanets();
-                checkAndSpawnGiftBox();
             } 
         }
         
